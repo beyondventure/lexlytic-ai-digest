@@ -4,6 +4,7 @@ import { ChatSidebar } from "@/components/ChatSidebar";
 import { HeroChatSection } from "@/components/HeroChatSection";
 import { RecentUpdates } from "@/components/RecentUpdates";
 import { AtAGlanceSidebar } from "@/components/AtAGlanceSidebar";
+import { ScraperControl } from "@/components/ScraperControl";
 
 const Index = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -16,6 +17,7 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Content - Left Side */}
           <div className="lg:col-span-8 space-y-12">
+            <ScraperControl />
             <HeroChatSection />
             <RecentUpdates />
           </div>
