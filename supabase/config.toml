@@ -1,0 +1,4 @@
+project_id = "fbhcciagsdafmszzmudm"
+
+[functions.scrape-cbn]
+verify_jwt = false
