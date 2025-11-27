@@ -121,8 +121,9 @@ function extractDocumentLinks(html: string): Array<{ title: string; url: string;
   const links: Array<{ title: string; url: string; date?: string }> = [];
   
   // Extract table rows - CBN uses a table structure for documents
-  const tableRowPattern = /<tr[^>]*>.*?<\/tr>/gis;
+  const tableRowPattern = /<tr[^>]*>[\s\S]*?<\/tr>/gi;
   const tableRows = html.match(tableRowPattern) || [];
+  console.log(`Found ${tableRows.length} table rows`);
   
   for (const row of tableRows) {
     // Extract PDF link and title from each row
@@ -136,8 +137,8 @@ function extractDocumentLinks(html: string): Array<{ title: string; url: string;
       const date = dateMatch ? dateMatch[1] : undefined;
       
       // Extract reference number
-      const refMatch = row.match(/>([A-Z]+\/[A-Z]+\/[A-Z]+\/[A-Z]+\/\d+\/\d+)</);
-      const refNumber = refMatch ? refMatch[1] : null;
+      const refMatch = row.match(/>([A-Z0-9\/]+)<\/td>/);
+      const refNumber = refMatch ? refMatch[1].trim() : null;
       
       if (title && url) {
         links.push({
