@@ -29,8 +29,8 @@ serve(async (req) => {
     let processedCount = 0;
     let errorCount = 0;
 
-    // Process each document
-    for (const link of documentLinks.slice(0, 10)) { // Limit to 10 for initial scrape
+    // Process each document (limit initial scrape for performance)
+    for (const link of documentLinks.slice(0, 10)) {
       try {
         // Check if document already exists
         const { data: existing } = await supabase
@@ -44,20 +44,18 @@ serve(async (req) => {
           continue;
         }
 
-        // Download PDF and extract text
+        // Download PDF and prepare placeholder full text
         let fullText = '';
         try {
           const pdfResponse = await fetch(link.url);
           if (pdfResponse.ok) {
-            // For now, we'll store the PDF URL and extract text later
-            // Full PDF text extraction would require additional processing
             fullText = `Document available at: ${link.url}`;
           }
         } catch (pdfError) {
           console.error(`Error downloading PDF: ${pdfError}`);
         }
 
-        // Generate summary (in a real implementation, use AI to generate this)
+        // Generate summary (placeholder; can be replaced by AI later)
         const summary = generateSummary(link.title);
 
         // Extract metadata from title
@@ -119,37 +117,40 @@ serve(async (req) => {
 
 function extractDocumentLinks(html: string): Array<{ title: string; url: string; date?: string }> {
   const links: Array<{ title: string; url: string; date?: string }> = [];
-  
-  // Extract table rows - CBN uses a table structure for documents
-  const tableRowPattern = /<tr[^>]*>[\s\S]*?<\/tr>/gi;
-  const tableRows = html.match(tableRowPattern) || [];
-  console.log(`Found ${tableRows.length} table rows`);
-  
-  for (const row of tableRows) {
-    // Extract PDF link and title from each row
-    const linkMatch = row.match(/<a[^>]*href="([^"]+\.pdf)"[^>]*>([^<]+)<\/a>/i);
-    if (linkMatch) {
-      const url = linkMatch[1].startsWith('http') ? linkMatch[1] : `https://www.cbn.gov.ng${linkMatch[1]}`;
-      const title = linkMatch[2].trim();
-      
-      // Extract date from the row (format: DD/MM/YYYY)
-      const dateMatch = row.match(/(\d{2}\/\d{2}\/\d{4})/);
-      const date = dateMatch ? dateMatch[1] : undefined;
-      
-      // Extract reference number
-      const refMatch = row.match(/>([A-Z0-9\/]+)<\/td>/);
-      const refNumber = refMatch ? refMatch[1].trim() : null;
-      
-      if (title && url) {
-        links.push({
-          title: refNumber ? `${refNumber} - ${title}` : title,
-          url: url,
-          date: date,
-        });
-      }
-    }
+
+  // Generic scan: find all PDF links on the page
+  const linkPattern = /<a[^>]*href=\"([^\"']+\.pdf)\"[^>]*>([\s\S]*?)<\/a>/gi;
+  let match: RegExpExecArray | null;
+  let count = 0;
+
+  while ((match = linkPattern.exec(html)) !== null) {
+    const rawUrl = match[1];
+    const url = rawUrl.startsWith('http') ? rawUrl : `https://www.cbn.gov.ng${rawUrl}`;
+    const rawTitle = match[2]
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .trim();
+
+    if (!url || !rawTitle) continue;
+
+    // Try to infer a nearby date (DD/MM/YYYY) from the surrounding HTML snippet
+    const contextStart = Math.max(0, match.index - 150);
+    const contextEnd = Math.min(html.length, match.index + match[0].length + 150);
+    const context = html.slice(contextStart, contextEnd);
+    const dateMatch = context.match(/(\d{2}\/\d{2}\/\d{4})/);
+    const date = dateMatch ? dateMatch[1] : undefined;
+
+    // Try to find a reference number pattern (letters/numbers and slashes)
+    const refMatch = context.match(/([A-Z0-9\/]{5,})/);
+    const refNumber = refMatch ? refMatch[1].trim() : null;
+
+    const title = refNumber ? `${refNumber} - ${rawTitle}` : rawTitle;
+
+    links.push({ title, url, date });
+    count++;
   }
 
+  console.log(`extractDocumentLinks: found ${count} PDF links`);
   return links;
 }
 
