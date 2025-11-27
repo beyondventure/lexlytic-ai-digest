@@ -6,6 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { NavLink } from "@/components/NavLink";
 
 interface NavigationProps {
   onChatOpen: () => void;
@@ -26,18 +27,34 @@ export const Navigation = ({ onChatOpen }: NavigationProps) => {
 
           {/* Menu Items */}
           <div className="hidden md:flex items-center gap-6">
-            <a href="/" className="text-sm font-medium text-primary hover:text-navy-light transition-colors">
+            <NavLink 
+              to="/" 
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              activeClassName="text-primary font-semibold"
+            >
               Home
-            </a>
-            <a href="/rulebook" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            </NavLink>
+            <NavLink 
+              to="/rulebook" 
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              activeClassName="text-primary font-semibold"
+            >
               Rulebook
-            </a>
-            <a href="/alerts" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            </NavLink>
+            <NavLink 
+              to="/alerts" 
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              activeClassName="text-primary font-semibold"
+            >
               Alerts
-            </a>
-            <a href="/reports" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            </NavLink>
+            <NavLink 
+              to="/reports" 
+              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              activeClassName="text-primary font-semibold"
+            >
               Reports
-            </a>
+            </NavLink>
           </div>
         </div>
 
