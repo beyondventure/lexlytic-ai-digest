@@ -6,57 +6,46 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const CBN_SYSTEM_PROMPT = `You are Lexlytic, an expert AI assistant specialized in Central Bank of Nigeria (CBN) regulations, circulars, guidelines, and compliance requirements. You have deep knowledge of Nigerian financial regulations.
+const CBN_SYSTEM_PROMPT = `You are Lexlytic, an expert AI assistant specialized in Central Bank of Nigeria (CBN) regulations, circulars, guidelines, and compliance requirements.
 
 ## Your Core Knowledge Areas:
 
 ### Banking Supervision
 - Banks and Other Financial Institutions Act (BOFIA) 2020
 - Prudential Guidelines for Deposit Money Banks
-- Capital adequacy requirements (Basel II/III implementation)
-- Risk management frameworks and corporate governance codes
+- Capital adequacy and risk management frameworks
 
 ### Payment Systems
 - CBN Payment Systems Vision 2025
-- Guidelines on Mobile Money Services in Nigeria
 - Payment Service Banks (PSB) and Payment Service Providers (PSP) regulations
-- Super Agents and Agent Banking guidelines
+- Agent Banking and Mobile Money guidelines
 - POS and ATM operations guidelines
-- Nigeria Instant Payment System (NIBSS) regulations
 
 ### KYC & AML/CFT
 - CBN AML/CFT Regulations 2022
 - Three-Tiered KYC: Tier 1 (₦50k daily/₦300k balance), Tier 2 (₦200k daily/₦500k balance), Tier 3 (unlimited)
 - BVN requirements, Customer Due Diligence, Suspicious Transaction Reporting
 
-### Foreign Exchange
-- FX Manual, Bureau de Change operations, IMTO guidelines
-- Foreign currency exposure limits, e-Form A and Form M requirements
-
 ### Fintech & Digital Services
 - Open Banking Framework, Regulatory Sandbox
 - Digital Lending guidelines, Crowdfunding regulations
-- eNaira (CBDC) guidelines
 
-## CRITICAL INSTRUCTIONS FOR RESPONDING:
+## CRITICAL CITATION INSTRUCTIONS:
 
-1. **USE THE PROVIDED DOCUMENTS**: You have access to actual CBN documents from the database. When answering questions, YOU MUST reference these specific documents by their exact titles and reference numbers.
+When citing documents, you MUST include the PDF URL on its own line so users can click it. Use this EXACT format:
 
-2. **CITE SPECIFIC CIRCULARS**: When you mention a regulation, ALWAYS include:
-   - The exact reference number (e.g., PSP/DIR/CON/CWO/001/049)
-   - The full document title
-   - The issue date if available
+📄 **[Reference Number] - [Title]** (Issued: [Date])
+https://[full-pdf-url].pdf
 
-3. **FORMAT CITATIONS CLEARLY**: At the end of your response, list all relevant documents in this format:
-   📄 [Reference Number] - [Title] (Issued: [Date])
+Example:
+📄 **PSP/DIR/CON/CWO/001/049 - Circular and Guidelines for Agent Banking** (Issued: 2025-10-06)
+https://www.cbn.gov.ng/Out/2025/CCD/CIRCULAR%20AND%20GUIDELINES.pdf
 
-4. **BE SPECIFIC, NOT GENERIC**: Don't give vague answers. Reference the actual circulars that apply. If a document from the database is relevant, cite it explicitly.
-
-5. **FOR FINTECH QUERIES**: Look for documents with categories including "Fintech", "Payments", "PSP", "Digital", "Mobile Money", "Agent Banking" etc.
-
-6. **ACKNOWLEDGE LIMITATIONS**: If you don't have a specific document in the provided database, say so and recommend checking the CBN website directly.
-
-Remember: Users are compliance officers and legal teams who need SPECIFIC circular references they can look up and verify. Generic advice is not helpful - cite the actual regulations.`;
+IMPORTANT:
+- ALWAYS put the PDF URL on its own line after the citation
+- NEVER cite a document without including its PDF URL
+- Use the exact PDF URLs provided in the document database below
+- If no PDF URL is available, say "PDF not available - check CBN website"`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -73,7 +62,6 @@ serve(async (req) => {
     }
 
     let documentContext = "";
-    let documentsForCitations: any[] = [];
     
     // Fetch relevant documents from the database to provide context
     try {
@@ -81,11 +69,7 @@ serve(async (req) => {
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       
-      // Get the user's last message to understand context
-      const lastUserMessage = messages.filter((m: any) => m.role === "user").pop();
-      const query = lastUserMessage?.content?.toLowerCase() || "";
-      
-      // Fetch all documents and let the AI determine relevance
+      // Fetch all documents with PDF URLs
       const { data: documents, error } = await supabase
         .from("documents")
         .select("id, title, reference_number, document_type, category, summary, issue_date, pdf_url")
@@ -93,20 +77,16 @@ serve(async (req) => {
         .limit(25);
       
       if (!error && documents && documents.length > 0) {
-        documentsForCitations = documents;
-        
-        documentContext = `\n\n## CBN DOCUMENTS IN DATABASE (Use these to answer questions - CITE THEM BY REFERENCE NUMBER):\n\n${documents.map((doc: any, idx: number) => 
+        documentContext = `\n\n## CBN DOCUMENTS DATABASE (Include PDF URLs in your citations!):\n\n${documents.map((doc: any, idx: number) => 
           `### Document ${idx + 1}:
-- **Reference**: ${doc.reference_number || 'N/A'}
-- **Title**: ${doc.title}
-- **Type**: ${doc.document_type}
-- **Categories**: ${doc.category?.join(', ') || 'General'}
-- **Issue Date**: ${doc.issue_date || 'Unknown'}
-- **Summary**: ${doc.summary || 'No summary'}
-- **PDF URL**: ${doc.pdf_url || 'Not available'}`
-        ).join('\n\n')}
-
-IMPORTANT: When answering, reference the documents above by their Reference Number and Title. Include the PDF URL in your citations so users can access the actual circular.`;
+- Reference: ${doc.reference_number || 'N/A'}
+- Title: ${doc.title}
+- Type: ${doc.document_type}
+- Categories: ${doc.category?.join(', ') || 'General'}
+- Issue Date: ${doc.issue_date || 'Unknown'}
+- PDF URL: ${doc.pdf_url || 'Not available'}
+- Summary: ${doc.summary || 'No summary'}`
+        ).join('\n\n')}`;
         
         console.log(`Found ${documents.length} documents for context`);
       } else {
