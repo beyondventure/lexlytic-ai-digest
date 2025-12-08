@@ -1,4 +1,4 @@
-import { X, Send, FileText, Loader2 } from "lucide-react";
+import { X, Send, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,12 +17,39 @@ interface ChatSidebarProps {
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
 
+// Function to parse message content and extract PDF links
+const parseMessageWithLinks = (content: string) => {
+  // Match PDF URLs in the content
+  const pdfUrlRegex = /(https?:\/\/[^\s)]+\.pdf)/gi;
+  const parts: Array<{ type: 'text' | 'link'; content: string; url?: string }> = [];
+  
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = pdfUrlRegex.exec(content)) !== null) {
+    // Add text before the URL
+    if (match.index > lastIndex) {
+      parts.push({ type: 'text', content: content.slice(lastIndex, match.index) });
+    }
+    // Add the URL as a link
+    parts.push({ type: 'link', content: 'View PDF', url: match[0] });
+    lastIndex = match.index + match[0].length;
+  }
+  
+  // Add remaining text
+  if (lastIndex < content.length) {
+    parts.push({ type: 'text', content: content.slice(lastIndex) });
+  }
+  
+  return parts.length > 0 ? parts : [{ type: 'text' as const, content }];
+};
+
 export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
   const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hello! I'm Lexlytic, your CBN regulatory expert. I have comprehensive knowledge of Central Bank of Nigeria circulars, guidelines, KYC requirements, payment systems, FX regulations, AML/CFT compliance, and more. How can I help you today?",
+      content: "Hello! I'm Lexlytic, your CBN regulatory expert. I have access to the latest circulars and guidelines from the Central Bank of Nigeria database.\n\nAsk me about specific regulations, fintech compliance, KYC requirements, payment systems, or any CBN circular - I'll provide specific references you can verify.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -65,7 +92,6 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
     let textBuffer = "";
     let assistantContent = "";
 
-    // Add empty assistant message that we'll update
     setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
     while (true) {
@@ -101,7 +127,6 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             });
           }
         } catch {
-          // Incomplete JSON, wait for more data
           textBuffer = line + "\n" + textBuffer;
           break;
         }
@@ -131,22 +156,48 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
         description: error instanceof Error ? error.message : "Failed to get response",
         variant: "destructive",
       });
-      // Remove the empty assistant message on error
       setMessages((prev) => prev.filter((m) => m.content.trim() !== ""));
     } finally {
       setIsLoading(false);
     }
   };
 
+  const renderMessageContent = (content: string) => {
+    const parts = parseMessageWithLinks(content);
+    
+    return (
+      <div className="text-sm whitespace-pre-wrap leading-relaxed">
+        {parts.map((part, idx) => {
+          if (part.type === 'link' && part.url) {
+            return (
+              <a
+                key={idx}
+                href={part.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-accent hover:text-accent/80 underline font-medium mx-1"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLink className="h-3 w-3" />
+                View Circular
+              </a>
+            );
+          }
+          return <span key={idx}>{part.content}</span>;
+        })}
+      </div>
+    );
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed right-0 top-0 h-full w-full sm:w-[480px] bg-card border-l border-border shadow-2xl z-50 flex flex-col">
+    <div className="fixed right-0 top-0 h-full w-full sm:w-[520px] bg-card border-l border-border shadow-2xl z-50 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-primary to-navy-light">
         <div>
           <h2 className="text-lg font-semibold text-primary-foreground">Ask Lexlytic</h2>
-          <p className="text-xs text-primary-foreground/80">CBN Regulatory Expert</p>
+          <p className="text-xs text-primary-foreground/80">CBN Regulatory Expert • Live Document Access</p>
         </div>
         <Button
           variant="ghost"
@@ -173,14 +224,18 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
                     : "bg-secondary text-secondary-foreground"
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                {message.role === "assistant" 
+                  ? renderMessageContent(message.content)
+                  : <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                }
               </div>
             </div>
           ))}
           {isLoading && messages[messages.length - 1]?.content === "" && (
             <div className="flex justify-start">
-              <div className="bg-secondary text-secondary-foreground rounded-lg p-3">
-                <Loader2 className="h-5 w-5 animate-spin" />
+              <div className="bg-secondary text-secondary-foreground rounded-lg p-3 flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Searching CBN database...</span>
               </div>
             </div>
           )}
@@ -194,7 +249,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-            placeholder="Ask about CBN regulations, KYC, payments, FX..."
+            placeholder="e.g., 'List circulars affecting fintechs in 2025'"
             className="flex-1"
             disabled={isLoading}
           />
@@ -212,7 +267,7 @@ export const ChatSidebar = ({ isOpen, onClose }: ChatSidebarProps) => {
           </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-2 text-center">
-          Trained on CBN circulars, guidelines, and regulatory frameworks
+          Connected to CBN documents database • Click links to view circulars
         </p>
       </div>
     </div>
