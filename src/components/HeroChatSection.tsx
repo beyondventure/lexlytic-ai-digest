@@ -279,8 +279,32 @@ export const HeroChatSection = () => {
             </Card>
           )}
 
+          {/* Follow-up Input */}
+          <div className="relative mt-4">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSend()}
+              placeholder="Ask a follow-up question..."
+              className="h-12 pr-14 text-base border-2 focus:border-accent"
+              disabled={isLoading}
+            />
+            <Button
+              onClick={() => handleSend()}
+              size="icon"
+              className="absolute right-2 top-1.5 bg-accent hover:bg-accent/90"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+
           {/* Disclaimer */}
-          <p className="text-xs text-muted-foreground text-center italic max-w-2xl mx-auto">
+          <p className="text-xs text-muted-foreground text-center italic max-w-2xl mx-auto mt-4">
             Responses include links to official CBN circulars. Click "View Circular" to access the PDF directly.
           </p>
         </div>
