@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Tag, Calendar, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const recentAlerts = [
   {
@@ -42,6 +43,8 @@ const upcomingDates = [
 ];
 
 export const AtAGlanceSidebar = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-6">
       {/* Recent Alerts */}
@@ -54,6 +57,7 @@ export const AtAGlanceSidebar = () => {
           {recentAlerts.map((alert, index) => (
             <div
               key={index}
+              onClick={() => navigate('/alerts')}
               className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer group"
             >
               <div
@@ -74,7 +78,11 @@ export const AtAGlanceSidebar = () => {
             </div>
           ))}
         </div>
-        <Button variant="link" className="w-full mt-3 text-accent hover:text-accent/80">
+        <Button 
+          variant="link" 
+          className="w-full mt-3 text-accent hover:text-accent/80"
+          onClick={() => navigate('/alerts')}
+        >
           View all alerts
         </Button>
       </Card>
@@ -91,12 +99,17 @@ export const AtAGlanceSidebar = () => {
               key={index}
               variant="secondary"
               className="hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+              onClick={() => navigate('/rulebook')}
             >
               {tag}
             </Badge>
           ))}
         </div>
-        <Button variant="link" className="w-full mt-3 text-accent hover:text-accent/80">
+        <Button 
+          variant="link" 
+          className="w-full mt-3 text-accent hover:text-accent/80"
+          onClick={() => navigate('/rulebook')}
+        >
           Manage watchlist
         </Button>
       </Card>
@@ -111,6 +124,7 @@ export const AtAGlanceSidebar = () => {
           {upcomingDates.map((item, index) => (
             <div
               key={index}
+              onClick={() => navigate('/alerts')}
               className="flex items-start gap-3 p-3 rounded-lg border border-border hover:border-accent transition-colors cursor-pointer group"
             >
               <div className="flex-1 min-w-0">
