@@ -29,8 +29,8 @@ serve(async (req) => {
     let processedCount = 0;
     let errorCount = 0;
 
-    // Process each document (limit initial scrape for performance)
-    for (const link of documentLinks.slice(0, 10)) {
+    // Process all documents
+    for (const link of documentLinks) {
       try {
         // Check if document already exists
         const { data: existing } = await supabase
