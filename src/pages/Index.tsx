@@ -243,8 +243,8 @@ const Index = () => {
           </p>
           <div className="animate-slide-up-delayed-2 flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2 shadow-lg hover:shadow-xl transition-all hover:scale-105">
-              <Link to="/cbn-portal">
-                Explore CBN Portal
+              <Link to="/signup">
+                Get Started
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </Button>
