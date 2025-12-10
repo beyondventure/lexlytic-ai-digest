@@ -125,9 +125,10 @@ const DocumentDetail = () => {
     );
   }
 
-  const obligations = document.key_obligations as string[] || [];
-  const penalties = document.key_penalties as string[] || [];
-  const definitions = document.key_definitions as string[] || [];
+  // Handle both array of objects and array of strings for backwards compatibility
+  const obligations = (document.key_obligations as Array<{title?: string; section?: string; description?: string} | string>) || [];
+  const penalties = (document.key_penalties as Array<{title?: string; section?: string; description?: string} | string>) || [];
+  const definitions = (document.key_definitions as Array<{term?: string; definition?: string} | string>) || [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -260,12 +261,25 @@ const DocumentDetail = () => {
                 <CardContent>
                   {obligations.length > 0 ? (
                     <ul className="space-y-3">
-                      {obligations.map((item: string, i: number) => (
-                        <li key={i} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                          <span className="text-accent font-bold">{i + 1}.</span>
-                          <span className="text-foreground">{item}</span>
-                        </li>
-                      ))}
+                      {obligations.map((item, i: number) => {
+                        const isObject = typeof item === 'object' && item !== null;
+                        return (
+                          <li key={i} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+                            <span className="text-accent font-bold">{i + 1}.</span>
+                            <div className="flex-1">
+                              {isObject ? (
+                                <>
+                                  <div className="font-medium text-foreground">{item.title}</div>
+                                  {item.section && <div className="text-xs text-muted-foreground mb-1">{item.section}</div>}
+                                  {item.description && <div className="text-sm text-muted-foreground">{item.description}</div>}
+                                </>
+                              ) : (
+                                <span className="text-foreground">{String(item)}</span>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                   ) : (
                     <p className="text-muted-foreground italic">No obligations extracted yet.</p>
@@ -285,12 +299,25 @@ const DocumentDetail = () => {
                 <CardContent>
                   {penalties.length > 0 ? (
                     <ul className="space-y-3">
-                      {penalties.map((item: string, i: number) => (
-                        <li key={i} className="flex items-start gap-3 p-3 bg-destructive/5 rounded-lg border border-destructive/20">
-                          <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
-                          <span className="text-foreground">{item}</span>
-                        </li>
-                      ))}
+                      {penalties.map((item, i: number) => {
+                        const isObject = typeof item === 'object' && item !== null;
+                        return (
+                          <li key={i} className="flex items-start gap-3 p-3 bg-destructive/5 rounded-lg border border-destructive/20">
+                            <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                              {isObject ? (
+                                <>
+                                  <div className="font-medium text-foreground">{item.title}</div>
+                                  {item.section && <div className="text-xs text-muted-foreground mb-1">{item.section}</div>}
+                                  {item.description && <div className="text-sm text-muted-foreground">{item.description}</div>}
+                                </>
+                              ) : (
+                                <span className="text-foreground">{String(item)}</span>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                   ) : (
                     <p className="text-muted-foreground italic">No penalties extracted yet.</p>
@@ -310,11 +337,21 @@ const DocumentDetail = () => {
                 <CardContent>
                   {definitions.length > 0 ? (
                     <ul className="space-y-3">
-                      {definitions.map((item: string, i: number) => (
-                        <li key={i} className="p-3 bg-muted/50 rounded-lg">
-                          <span className="text-foreground">{item}</span>
-                        </li>
-                      ))}
+                      {definitions.map((item, i: number) => {
+                        const isObject = typeof item === 'object' && item !== null;
+                        return (
+                          <li key={i} className="p-3 bg-muted/50 rounded-lg">
+                            {isObject && 'term' in item ? (
+                              <>
+                                <div className="font-medium text-foreground">{item.term}</div>
+                                {item.definition && <div className="text-sm text-muted-foreground mt-1">{item.definition}</div>}
+                              </>
+                            ) : (
+                              <span className="text-foreground">{String(item)}</span>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   ) : (
                     <p className="text-muted-foreground italic">No definitions extracted yet.</p>
