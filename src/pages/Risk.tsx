@@ -144,51 +144,6 @@ const Risk = () => {
           </p>
         </div>
 
-        {/* Risk Score Key */}
-        <Card className="mb-8 bg-secondary/30">
-          <CardContent className="py-4">
-            <div className="flex flex-col gap-4">
-              {/* Color Key with visual bars */}
-              <div className="flex flex-wrap items-center gap-8">
-                <span className="text-sm font-medium text-foreground">Understanding the Chart:</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-12 h-3 bg-success rounded-full" />
-                  <span className="text-sm text-muted-foreground">Green = Low Risk (0-49)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-12 h-3 bg-warning rounded-full" />
-                  <span className="text-sm text-muted-foreground">Yellow = Medium Risk (50-69)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-12 h-3 bg-destructive rounded-full" />
-                  <span className="text-sm text-muted-foreground">Red = High Risk (70-100)</span>
-                </div>
-              </div>
-              
-              {/* Bar & Arrow Explanation */}
-              <div className="flex flex-wrap items-center gap-8 pt-3 border-t border-border">
-                <span className="text-sm font-medium text-foreground">What the numbers mean:</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-foreground">72</span>
-                  <span className="text-sm text-muted-foreground">= Risk score out of 100</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs flex items-center text-success">
-                    <TrendingDown className="h-3 w-3 mr-0.5" />5
-                  </span>
-                  <span className="text-sm text-muted-foreground">= Risk went down by 5 (good)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs flex items-center text-destructive">
-                    <TrendingUp className="h-3 w-3 mr-0.5" />3
-                  </span>
-                  <span className="text-sm text-muted-foreground">= Risk went up by 3 (bad)</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Overall Score */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card className="md:col-span-1">
@@ -246,6 +201,51 @@ const Risk = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Risk Score Key */}
+        <Card className="mb-6 bg-secondary/30">
+          <CardContent className="py-4">
+            <div className="flex flex-col gap-4">
+              {/* Color Key with visual bars */}
+              <div className="flex flex-wrap items-center gap-8">
+                <span className="text-sm font-medium text-foreground">Understanding the Chart:</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-12 h-3 bg-success rounded-full" />
+                  <span className="text-sm text-muted-foreground">Green = Low Risk (0-49)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-12 h-3 bg-warning rounded-full" />
+                  <span className="text-sm text-muted-foreground">Yellow = Medium Risk (50-69)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-12 h-3 bg-destructive rounded-full" />
+                  <span className="text-sm text-muted-foreground">Red = High Risk (70-100)</span>
+                </div>
+              </div>
+              
+              {/* Bar & Arrow Explanation */}
+              <div className="flex flex-wrap items-center gap-8 pt-3 border-t border-border">
+                <span className="text-sm font-medium text-foreground">What the numbers mean:</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-foreground">72</span>
+                  <span className="text-sm text-muted-foreground">= Risk score out of 100</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs flex items-center text-success">
+                    <TrendingDown className="h-3 w-3 mr-0.5" />5
+                  </span>
+                  <span className="text-sm text-muted-foreground">= Risk went down by 5 (good)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs flex items-center text-destructive">
+                    <TrendingUp className="h-3 w-3 mr-0.5" />3
+                  </span>
+                  <span className="text-sm text-muted-foreground">= Risk went up by 3 (bad)</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* Risk by Jurisdiction */}
