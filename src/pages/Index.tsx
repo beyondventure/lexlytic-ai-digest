@@ -22,7 +22,7 @@ const features = [
     icon: FileText,
     title: "Legal Intelligence Engine",
     description: "Upload legislation, get AI-powered summaries with auto-tagging of obligations, penalties, and entities.",
-    href: "/cbn-portal"
+    href: "/cbn-copilot"
   },
   {
     icon: Globe,
@@ -104,8 +104,8 @@ const Index = () => {
             <span className="text-xl font-bold text-foreground">Lexlytic</span>
           </div>
           <div className="hidden md:flex items-center gap-6">
-            <Link to="/cbn-portal" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              CBN Portal
+            <Link to="/cbn-copilot" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              CBN Co-pilot
             </Link>
             <Link to="/features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               Features
@@ -282,7 +282,7 @@ const Index = () => {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><span className="cursor-not-allowed opacity-60">Features</span></li>
                 <li><span className="cursor-not-allowed opacity-60">Pricing</span></li>
-                <li><span className="cursor-not-allowed opacity-60">CBN Portal</span></li>
+                <li><span className="cursor-not-allowed opacity-60">CBN Co-pilot</span></li>
               </ul>
             </div>
             <div>

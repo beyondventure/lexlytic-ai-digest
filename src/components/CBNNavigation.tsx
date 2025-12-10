@@ -29,7 +29,7 @@ export const CBNNavigation = ({ onChatOpen }: CBNNavigationProps) => {
               </div>
               <div className="flex flex-col">
                 <span className="text-lg font-bold text-primary leading-tight">Lexlytic</span>
-                <span className="text-xs text-muted-foreground leading-tight">CBN Portal</span>
+                <span className="text-xs text-muted-foreground leading-tight">CBN Co-pilot</span>
               </div>
             </div>
           </div>
@@ -37,28 +37,28 @@ export const CBNNavigation = ({ onChatOpen }: CBNNavigationProps) => {
           {/* Menu Items */}
           <div className="hidden md:flex items-center gap-6">
             <NavLink 
-              to="/cbn-portal" 
+              to="/cbn-copilot" 
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               activeClassName="text-primary font-semibold"
             >
               Home
             </NavLink>
             <NavLink 
-              to="/cbn-portal/rulebook" 
+              to="/cbn-copilot/rulebook" 
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               activeClassName="text-primary font-semibold"
             >
               Rulebook
             </NavLink>
             <NavLink 
-              to="/cbn-portal/alerts" 
+              to="/cbn-copilot/alerts" 
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               activeClassName="text-primary font-semibold"
             >
               Alerts
             </NavLink>
             <NavLink 
-              to="/cbn-portal/reports" 
+              to="/cbn-copilot/reports" 
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
               activeClassName="text-primary font-semibold"
             >
