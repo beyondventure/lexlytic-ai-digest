@@ -6,31 +6,22 @@ import { Check, ArrowRight, Zap, Building2, Crown } from "lucide-react";
 
 const plans = [
   {
-    name: "Enterprise",
-    icon: Crown,
-    pricePerRegion: "$1,500",
-    contractValue: "$15k annually",
-    revenueRequirement: "Gross revenue of $100M and above",
+    name: "Startup/Entry Level",
+    icon: Zap,
     features: [
-      "Unlimited documents",
-      "Full AI suite + customization",
-      "All jurisdictions",
-      "Custom alert workflows",
-      "Risk management dashboard",
-      "Dedicated success manager",
-      "Unlimited users",
-      "SSO & advanced security",
-      "Custom integrations",
+      "100 document uploads/month",
+      "AI summarization & analysis",
+      "5 jurisdictions",
+      "Basic regulatory alerts",
+      "Email support",
+      "3 user seats",
     ],
-    cta: "Contact Sales",
+    cta: "Start Free Trial",
     popular: false,
   },
   {
     name: "Midsize",
     icon: Building2,
-    pricePerRegion: "$750",
-    contractValue: "$7,500 annually",
-    revenueRequirement: "Gross revenue of >$25M up to $100M",
     features: [
       "500 document uploads/month",
       "Advanced AI with citations",
@@ -46,20 +37,20 @@ const plans = [
     popular: true,
   },
   {
-    name: "Startup/Entry Level",
-    icon: Zap,
-    pricePerRegion: "$500",
-    contractValue: "$1,000 annually",
-    revenueRequirement: "Gross Revenue of >$5M",
+    name: "Enterprise",
+    icon: Crown,
     features: [
-      "100 document uploads/month",
-      "AI summarization & analysis",
-      "5 jurisdictions",
-      "Basic regulatory alerts",
-      "Email support",
-      "3 user seats",
+      "Unlimited documents",
+      "Full AI suite + customization",
+      "All jurisdictions",
+      "Custom alert workflows",
+      "Risk management dashboard",
+      "Dedicated success manager",
+      "Unlimited users",
+      "SSO & advanced security",
+      "Custom integrations",
     ],
-    cta: "Start Free Trial",
+    cta: "Contact Sales",
     popular: false,
   },
 ];
@@ -163,21 +154,6 @@ const Pricing = () => {
                   <CardTitle className="text-xl">{plan.name}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="bg-secondary/50 rounded-lg p-4 space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Price range per region</span>
-                      <span className="text-lg font-bold text-foreground">{plan.pricePerRegion}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Avg. Contract Value</span>
-                      <span className="text-lg font-bold text-foreground">{plan.contractValue}</span>
-                    </div>
-                  </div>
-                  <div className="flex justify-center">
-                    <Badge variant="secondary" className="text-xs text-center">
-                      {plan.revenueRequirement}
-                    </Badge>
-                  </div>
                   <Button 
                     className={`w-full ${plan.popular ? 'bg-accent hover:bg-accent/90' : ''}`}
                     variant={plan.popular ? "default" : "outline"}
