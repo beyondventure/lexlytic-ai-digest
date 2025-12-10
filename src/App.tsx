@@ -13,6 +13,11 @@ import Dashboard from "./pages/Dashboard";
 import Documents from "./pages/Documents";
 import DocumentUpload from "./pages/DocumentUpload";
 import Features from "./pages/Features";
+import Chat from "./pages/Chat";
+import Comparison from "./pages/Comparison";
+import Risk from "./pages/Risk";
+import AlertSettings from "./pages/AlertSettings";
+import Translate from "./pages/Translate";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +40,11 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/documents" element={<Documents />} />
           <Route path="/documents/upload" element={<DocumentUpload />} />
+          <Route path="/chat" element={<Chat />} />
+          <Route path="/comparison" element={<Comparison />} />
+          <Route path="/risk" element={<Risk />} />
+          <Route path="/alerts-settings" element={<AlertSettings />} />
+          <Route path="/translate" element={<Translate />} />
           
           {/* CBN Portal routes */}
           <Route path="/cbn-portal" element={<CBNPortal />} />
