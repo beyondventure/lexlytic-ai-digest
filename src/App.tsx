@@ -18,6 +18,7 @@ import Comparison from "./pages/Comparison";
 import Risk from "./pages/Risk";
 import AlertSettings from "./pages/AlertSettings";
 import Translate from "./pages/Translate";
+import DocumentDetail from "./pages/DocumentDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/documents" element={<Documents />} />
           <Route path="/documents/upload" element={<DocumentUpload />} />
+          <Route path="/documents/:id" element={<DocumentDetail />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/comparison" element={<Comparison />} />
           <Route path="/risk" element={<Risk />} />
