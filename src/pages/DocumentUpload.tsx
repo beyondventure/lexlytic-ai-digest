@@ -19,6 +19,11 @@ import {
   X
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import * as pdfjsLib from "pdfjs-dist";
+import mammoth from "mammoth";
+
+// Set up PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const jurisdictions = [
   "Nigeria", "United States", "United Kingdom", "European Union", "Singapore",
@@ -99,6 +104,68 @@ const DocumentUpload = () => {
     }
   };
 
+  // Extract text from PDF using pdf.js
+  const extractPdfText = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = "";
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(" ");
+      fullText += pageText + "\n\n";
+    }
+    
+    return fullText.trim();
+  };
+
+  // Extract text from Word documents using mammoth
+  const extractWordText = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value;
+  };
+
+  // Extract text based on file type
+  const extractTextFromFile = async (file: File): Promise<string> => {
+    const fileName = file.name.toLowerCase();
+    const fileType = file.type;
+
+    // Text-based files
+    if (fileType === 'text/plain' || 
+        fileName.endsWith('.txt') || 
+        fileName.endsWith('.md') ||
+        fileName.endsWith('.html')) {
+      return await file.text();
+    }
+
+    // PDF files
+    if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
+      toast({
+        title: "Extracting PDF text...",
+        description: "Please wait while we extract the document content.",
+      });
+      return await extractPdfText(file);
+    }
+
+    // Word documents
+    if (fileType === 'application/msword' || 
+        fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        fileName.endsWith('.doc') || 
+        fileName.endsWith('.docx')) {
+      toast({
+        title: "Extracting Word document text...",
+        description: "Please wait while we extract the document content.",
+      });
+      return await extractWordText(file);
+    }
+
+    return "";
+  };
+
   const handleUpload = async () => {
     if (!user) return;
     if (!selectedFile && !urlInput) {
@@ -142,7 +209,7 @@ const DocumentUpload = () => {
 
       let documentContent = "";
       
-      // If file selected, upload to storage and read content
+      // If file selected, upload to storage and extract content
       if (selectedFile) {
         const filePath = `${user.id}/${doc.id}/${selectedFile.name}`;
         const { error: uploadError } = await supabase.storage
@@ -168,12 +235,16 @@ const DocumentUpload = () => {
           .update({ file_url: urlData.publicUrl })
           .eq('id', doc.id);
 
-        // Read file content for text-based files
-        if (selectedFile.type === 'text/plain' || 
-            selectedFile.name.endsWith('.txt') || 
-            selectedFile.name.endsWith('.md') ||
-            selectedFile.name.endsWith('.html')) {
-          documentContent = await selectedFile.text();
+        // Extract text from all supported file types
+        try {
+          documentContent = await extractTextFromFile(selectedFile);
+        } catch (extractError) {
+          console.error("Text extraction error:", extractError);
+          toast({
+            title: "Text extraction failed",
+            description: "Could not extract text from the file. You can try re-analyzing later.",
+            variant: "destructive",
+          });
         }
       }
 
