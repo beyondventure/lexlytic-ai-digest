@@ -147,19 +147,40 @@ const Risk = () => {
         {/* Risk Score Key */}
         <Card className="mb-8 bg-secondary/30">
           <CardContent className="py-4">
-            <div className="flex flex-wrap items-center gap-6">
-              <span className="text-sm font-medium text-foreground">Risk Score Key:</span>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-success" />
-                <span className="text-sm text-muted-foreground">0-49: Low Risk</span>
+            <div className="flex flex-col gap-4">
+              {/* Color Key */}
+              <div className="flex flex-wrap items-center gap-6">
+                <span className="text-sm font-medium text-foreground">Risk Level:</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-success" />
+                  <span className="text-sm text-muted-foreground">0-49: Low Risk</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-warning" />
+                  <span className="text-sm text-muted-foreground">50-69: Medium Risk</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-destructive" />
+                  <span className="text-sm text-muted-foreground">70-100: High Risk</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-warning" />
-                <span className="text-sm text-muted-foreground">50-69: Medium Risk</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-destructive" />
-                <span className="text-sm text-muted-foreground">70-100: High Risk</span>
+              
+              {/* Bar & Arrow Explanation */}
+              <div className="flex flex-wrap items-center gap-6 pt-2 border-t border-border">
+                <div className="flex items-center gap-2">
+                  <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="w-3/4 h-full bg-warning rounded-full" />
+                  </div>
+                  <span className="text-sm text-muted-foreground">Bar length = risk score (longer = higher risk)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TrendingDown className="h-4 w-4 text-success" />
+                  <span className="text-sm text-muted-foreground">Risk decreased (good)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-destructive" />
+                  <span className="text-sm text-muted-foreground">Risk increased (bad)</span>
+                </div>
               </div>
             </div>
           </CardContent>
