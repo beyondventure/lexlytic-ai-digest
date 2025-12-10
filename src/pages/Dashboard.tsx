@@ -322,6 +322,15 @@ const Dashboard = () => {
           </Card>
         </div>
       </main>
+
+      {/* Disclaimer Footer */}
+      <footer className="border-t border-border bg-card/50 py-6">
+        <div className="container mx-auto px-6">
+          <p className="text-xs text-muted-foreground text-center max-w-3xl mx-auto">
+            Lexlytic is not a law firm and does not offer legal advice. Outputs are informational only; users must rely on professional legal judgment for decisions.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };
