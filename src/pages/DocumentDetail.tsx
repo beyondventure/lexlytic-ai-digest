@@ -59,7 +59,7 @@ const DocumentDetail = () => {
     setTranslating(true);
     try {
       const { data, error } = await supabase.functions.invoke("translate", {
-        body: { text: document.full_text.substring(0, 5000), targetLanguage: targetLang },
+        body: { text: document.full_text.substring(0, 5000), sourceLang: "en", targetLang: targetLang },
       });
       if (error) throw error;
       setTranslatedText(data.translatedText);
