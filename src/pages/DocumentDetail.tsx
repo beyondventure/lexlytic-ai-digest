@@ -153,7 +153,7 @@ const DocumentDetail = () => {
             <Button asChild>
               <Link to={`/chat?doc=${id}`}>
                 <MessageSquare className="h-4 w-4 mr-2" />
-                Ask AI
+                Ask Lexlytic
               </Link>
             </Button>
           </div>
