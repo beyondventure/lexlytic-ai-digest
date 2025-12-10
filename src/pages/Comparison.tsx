@@ -283,33 +283,33 @@ const Comparison = () => {
                   <ComparisonRow
                     label="Governing Law"
                     icon={<Scale className="h-4 w-4" />}
-                    data={selectedJurisdictions.map(code => currentData[code]?.law || "—")}
+                    data={selectedJurisdictions.map(code => currentData[code]?.law || "-")}
                   />
                   <ComparisonRow
                     label="Regulatory Authority"
                     icon={<Globe className="h-4 w-4" />}
-                    data={selectedJurisdictions.map(code => currentData[code]?.authority || "—")}
+                    data={selectedJurisdictions.map(code => currentData[code]?.authority || "-")}
                   />
                   <ComparisonRow
                     label="Maximum Penalties"
                     icon={<AlertTriangle className="h-4 w-4" />}
-                    data={selectedJurisdictions.map(code => currentData[code]?.penalties || "—")}
+                    data={selectedJurisdictions.map(code => currentData[code]?.penalties || "-")}
                     highlight
                   />
                   <ComparisonRow
                     label="Consent Requirements"
                     icon={<Clock className="h-4 w-4" />}
-                    data={selectedJurisdictions.map(code => currentData[code]?.consent || "—")}
+                    data={selectedJurisdictions.map(code => currentData[code]?.consent || "-")}
                   />
                   <ComparisonRow
                     label="DPO Requirement"
                     icon={<Scale className="h-4 w-4" />}
-                    data={selectedJurisdictions.map(code => currentData[code]?.dpo || "—")}
+                    data={selectedJurisdictions.map(code => currentData[code]?.dpo || "-")}
                   />
                   <ComparisonRow
                     label="Cross-Border Transfer"
                     icon={<Globe className="h-4 w-4" />}
-                    data={selectedJurisdictions.map(code => currentData[code]?.crossBorder || "—")}
+                    data={selectedJurisdictions.map(code => currentData[code]?.crossBorder || "-")}
                   />
                 </>
               ) : selectedType === "Anti-Money Laundering" ? (
@@ -317,33 +317,33 @@ const Comparison = () => {
                   <ComparisonRow
                     label="Governing Law"
                     icon={<Scale className="h-4 w-4" />}
-                    data={selectedJurisdictions.map(code => currentData[code]?.law || "—")}
+                    data={selectedJurisdictions.map(code => currentData[code]?.law || "-")}
                   />
                   <ComparisonRow
                     label="Regulatory Authority"
                     icon={<Globe className="h-4 w-4" />}
-                    data={selectedJurisdictions.map(code => currentData[code]?.authority || "—")}
+                    data={selectedJurisdictions.map(code => currentData[code]?.authority || "-")}
                   />
                   <ComparisonRow
                     label="Maximum Penalties"
                     icon={<AlertTriangle className="h-4 w-4" />}
-                    data={selectedJurisdictions.map(code => currentData[code]?.penalties || "—")}
+                    data={selectedJurisdictions.map(code => currentData[code]?.penalties || "-")}
                     highlight
                   />
                   <ComparisonRow
                     label="Reporting Threshold"
                     icon={<DollarSign className="h-4 w-4" />}
-                    data={selectedJurisdictions.map(code => currentData[code]?.threshold || "—")}
+                    data={selectedJurisdictions.map(code => currentData[code]?.threshold || "-")}
                   />
                   <ComparisonRow
                     label="KYC Requirements"
                     icon={<Scale className="h-4 w-4" />}
-                    data={selectedJurisdictions.map(code => currentData[code]?.kyc || "—")}
+                    data={selectedJurisdictions.map(code => currentData[code]?.kyc || "-")}
                   />
                   <ComparisonRow
                     label="STR Timeline"
                     icon={<Clock className="h-4 w-4" />}
-                    data={selectedJurisdictions.map(code => currentData[code]?.reporting || "—")}
+                    data={selectedJurisdictions.map(code => currentData[code]?.reporting || "-")}
                   />
                 </>
               ) : (

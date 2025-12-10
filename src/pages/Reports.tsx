@@ -314,7 +314,7 @@ const Reports = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Avg Compliance Rate</p>
                   <p className="text-2xl font-bold text-success">
-                    {analysisResult?.complianceScore ? `${analysisResult.complianceScore}%` : '—'}
+                    {analysisResult?.complianceScore ? `${analysisResult.complianceScore}%` : '-'}
                   </p>
                 </div>
               </div>
@@ -328,7 +328,7 @@ const Reports = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Last Analysis</p>
                   <p className="text-2xl font-bold text-foreground">
-                    {analysisResult ? "Today" : "—"}
+                    {analysisResult ? "Today" : "-"}
                   </p>
                 </div>
               </div>
