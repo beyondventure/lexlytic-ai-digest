@@ -12,13 +12,7 @@ import {
   Sparkles,
   Building2,
   Scale,
-  Briefcase,
-  BookOpen,
-  Search,
-  Zap,
-  TrendingUp,
-  Lock,
-  CheckCircle2
+  Briefcase
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -132,98 +126,14 @@ const Index = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6 min-h-[90vh] flex items-center">
-        {/* Animated background gradient */}
+      <section className="relative pt-32 pb-20 px-6 min-h-[85vh] flex items-center">
+        {/* Subtle animated background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5 animate-gradient" />
         
-        {/* Floating background elements */}
+        {/* Minimal decorative elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {/* Large floating cards */}
-          <div className="absolute top-20 left-[5%] w-64 h-40 bg-card/60 backdrop-blur-sm rounded-2xl border border-border/50 shadow-lg animate-float p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center">
-                <FileText className="w-4 h-4 text-accent" />
-              </div>
-              <span className="text-sm font-medium text-foreground">Document Analysis</span>
-            </div>
-            <div className="space-y-2">
-              <div className="h-2 bg-muted rounded-full w-full" />
-              <div className="h-2 bg-muted rounded-full w-3/4" />
-              <div className="h-2 bg-accent/30 rounded-full w-1/2" />
-            </div>
-            <div className="mt-3 flex items-center gap-1 text-xs text-accent">
-              <CheckCircle2 className="w-3 h-3" />
-              <span>95% Accuracy</span>
-            </div>
-          </div>
-
-          <div className="absolute top-40 right-[8%] w-56 h-48 bg-card/60 backdrop-blur-sm rounded-2xl border border-border/50 shadow-lg animate-float-delayed p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Globe className="w-4 h-4 text-primary" />
-              </div>
-              <span className="text-sm font-medium text-foreground">Global Coverage</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              {['NG', 'GH', 'KE', 'ZA', 'EG', 'MA'].map((code) => (
-                <div key={code} className="h-6 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground font-medium">
-                  {code}
-                </div>
-              ))}
-            </div>
-            <div className="text-xs text-muted-foreground">100+ jurisdictions</div>
-          </div>
-
-          <div className="absolute bottom-32 left-[10%] w-52 h-36 bg-card/60 backdrop-blur-sm rounded-2xl border border-border/50 shadow-lg animate-float-slow p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded bg-green-500/20 flex items-center justify-center">
-                <TrendingUp className="w-3 h-3 text-green-600" />
-              </div>
-              <span className="text-xs font-medium text-foreground">Compliance Score</span>
-            </div>
-            <div className="text-3xl font-bold text-foreground mb-1">94%</div>
-            <div className="flex items-center gap-1 text-xs text-green-600">
-              <TrendingUp className="w-3 h-3" />
-              <span>+12% this month</span>
-            </div>
-          </div>
-
-          <div className="absolute bottom-24 right-[15%] w-48 h-32 bg-card/60 backdrop-blur-sm rounded-2xl border border-border/50 shadow-lg animate-float p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 rounded bg-accent/20 flex items-center justify-center">
-                <Zap className="w-3 h-3 text-accent" />
-              </div>
-              <span className="text-xs font-medium text-foreground">Real-time Alerts</span>
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                <span className="text-xs text-muted-foreground">New CBN circular</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                <span className="text-xs text-muted-foreground">Amendment pending</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Orbiting icons */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] hidden lg:block">
-            <div className="absolute inset-0 animate-orbit">
-              <div className="w-12 h-12 bg-card rounded-xl shadow-lg flex items-center justify-center border border-border">
-                <BookOpen className="w-6 h-6 text-primary" />
-              </div>
-            </div>
-            <div className="absolute inset-0 animate-orbit-reverse">
-              <div className="w-10 h-10 bg-card rounded-xl shadow-lg flex items-center justify-center border border-border">
-                <Search className="w-5 h-5 text-accent" />
-              </div>
-            </div>
-          </div>
-
-          {/* Decorative blobs */}
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-accent/8 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-primary/8 rounded-full blur-3xl" />
         </div>
 
         <div className="container mx-auto text-center max-w-4xl relative z-10">
@@ -252,22 +162,6 @@ const Index = () => {
               <Link to="/demo">Request Demo</Link>
             </Button>
           </div>
-          
-          {/* Trust badges */}
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-muted-foreground animate-slide-up-delayed-2">
-            <div className="flex items-center gap-2">
-              <Lock className="w-4 h-4 text-accent" />
-              <span className="text-sm">Bank-grade Security</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-accent" />
-              <span className="text-sm">SOC 2 Compliant</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-accent" />
-              <span className="text-sm">99.9% Uptime</span>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -284,7 +178,7 @@ const Index = () => {
               <div className="text-sm text-muted-foreground">Query Response Time</div>
             </div>
             <div>
-              <div className="text-3xl md:text-4xl font-bold text-accent mb-2">100+</div>
+              <div className="text-3xl md:text-4xl font-bold text-accent mb-2">50+</div>
               <div className="text-sm text-muted-foreground">Jurisdictions Covered</div>
             </div>
             <div>
