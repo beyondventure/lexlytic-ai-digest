@@ -138,7 +138,7 @@ const Index = () => {
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             Transform how your organization understands, tracks, and complies with legislation across jurisdictions. 
-            Real-time intelligence, automated workflows, and cross-border analysis—all in one platform.
+            Real-time intelligence, automated workflows, and cross-border analysis, all in one platform.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" asChild className="bg-accent hover:bg-accent/90 text-accent-foreground gap-2">
