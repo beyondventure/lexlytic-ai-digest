@@ -386,33 +386,33 @@ const Index = () => {
             <div>
               <h4 className="font-semibold text-foreground mb-4">Product</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/features" className="hover:text-primary">Features</Link></li>
-                <li><Link to="/pricing" className="hover:text-primary">Pricing</Link></li>
-                <li><Link to="/cbn-portal" className="hover:text-primary">CBN Portal</Link></li>
+                <li><span className="cursor-not-allowed opacity-60">Features</span></li>
+                <li><span className="cursor-not-allowed opacity-60">Pricing</span></li>
+                <li><span className="cursor-not-allowed opacity-60">CBN Portal</span></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold text-foreground mb-4">Resources</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/docs" className="hover:text-primary">Documentation</Link></li>
-                <li><Link to="/api" className="hover:text-primary">API</Link></li>
-                <li><Link to="/blog" className="hover:text-primary">Blog</Link></li>
+                <li><span className="cursor-not-allowed opacity-60">Documentation</span></li>
+                <li><span className="cursor-not-allowed opacity-60">API</span></li>
+                <li><span className="cursor-not-allowed opacity-60">Blog</span></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold text-foreground mb-4">Company</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/about" className="hover:text-primary">About</Link></li>
-                <li><Link to="/careers" className="hover:text-primary">Careers</Link></li>
-                <li><Link to="/contact" className="hover:text-primary">Contact</Link></li>
+                <li><span className="cursor-not-allowed opacity-60">About</span></li>
+                <li><span className="cursor-not-allowed opacity-60">Careers</span></li>
+                <li><span className="cursor-not-allowed opacity-60">Contact</span></li>
               </ul>
             </div>
             <div>
               <h4 className="font-semibold text-foreground mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/privacy" className="hover:text-primary">Privacy</Link></li>
-                <li><Link to="/terms" className="hover:text-primary">Terms</Link></li>
-                <li><Link to="/security" className="hover:text-primary">Security</Link></li>
+                <li><span className="cursor-not-allowed opacity-60">Privacy</span></li>
+                <li><span className="cursor-not-allowed opacity-60">Terms</span></li>
+                <li><span className="cursor-not-allowed opacity-60">Security</span></li>
               </ul>
             </div>
           </div>
