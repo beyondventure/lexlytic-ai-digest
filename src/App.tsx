@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import Documents from "./pages/Documents";
 import DocumentUpload from "./pages/DocumentUpload";
 import Features from "./pages/Features";
+import Pricing from "./pages/Pricing";
 import Chat from "./pages/Chat";
 import Comparison from "./pages/Comparison";
 import Risk from "./pages/Risk";
@@ -33,6 +34,7 @@ const App = () => (
           {/* Public routes */}
           <Route path="/" element={<Index />} />
           <Route path="/features" element={<Features />} />
+          <Route path="/pricing" element={<Pricing />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/login" element={<Auth />} />
           <Route path="/signup" element={<Auth />} />
