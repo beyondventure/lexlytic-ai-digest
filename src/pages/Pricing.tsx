@@ -9,8 +9,7 @@ const plans = [
     name: "Startup/Entry Level",
     icon: Zap,
     price: "$500",
-    period: "/region",
-    annualPrice: "$1,000 annually",
+    period: "/month",
     features: [
       "100 document uploads/month",
       "AI summarization & analysis",
@@ -26,8 +25,7 @@ const plans = [
     name: "Midsize",
     icon: Building2,
     price: "$750",
-    period: "/region",
-    annualPrice: "$7,500 annually",
+    period: "/month",
     features: [
       "500 document uploads/month",
       "Advanced AI with citations",
@@ -46,8 +44,7 @@ const plans = [
     name: "Enterprise",
     icon: Crown,
     price: "$1,500",
-    period: "/region",
-    annualPrice: "$15k annually",
+    period: "/month",
     features: [
       "Unlimited documents",
       "Full AI suite + customization",
@@ -163,12 +160,9 @@ const Pricing = () => {
                   <CardTitle className="text-xl">{plan.name}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-bold text-foreground">{plan.price}</span>
-                      <span className="text-muted-foreground">{plan.period}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">{plan.annualPrice}</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold text-foreground">{plan.price}</span>
+                    <span className="text-muted-foreground">{plan.period}</span>
                   </div>
                   <Button 
                     className={`w-full ${plan.popular ? 'bg-accent hover:bg-accent/90' : ''}`}
