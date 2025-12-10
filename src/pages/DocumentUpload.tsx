@@ -140,7 +140,9 @@ const DocumentUpload = () => {
 
       if (docError) throw docError;
 
-      // If file selected, upload to storage
+      let documentContent = "";
+      
+      // If file selected, upload to storage and read content
       if (selectedFile) {
         const filePath = `${user.id}/${doc.id}/${selectedFile.name}`;
         const { error: uploadError } = await supabase.storage
@@ -149,7 +151,6 @@ const DocumentUpload = () => {
 
         if (uploadError) {
           console.error("Upload error:", uploadError);
-          // Update status to failed
           await supabase
             .from("legal_documents")
             .update({ status: 'failed' })
@@ -166,16 +167,62 @@ const DocumentUpload = () => {
           .from("legal_documents")
           .update({ file_url: urlData.publicUrl })
           .eq('id', doc.id);
+
+        // Read file content for text-based files
+        if (selectedFile.type === 'text/plain' || 
+            selectedFile.name.endsWith('.txt') || 
+            selectedFile.name.endsWith('.md') ||
+            selectedFile.name.endsWith('.html')) {
+          documentContent = await selectedFile.text();
+        }
       }
 
-      // TODO: Trigger AI summarization via edge function
+      // Update document with content if we have it
+      if (documentContent) {
+        await supabase
+          .from("legal_documents")
+          .update({ full_text: documentContent })
+          .eq('id', doc.id);
 
-      toast({
-        title: "Document uploaded",
-        description: "Your document is being processed. You'll be notified when analysis is complete.",
-      });
+        // Trigger AI summarization automatically
+        toast({
+          title: "Analyzing document...",
+          description: "AI is processing your document. This may take a moment.",
+        });
 
-      navigate("/dashboard");
+        try {
+          const { error: summarizeError } = await supabase.functions.invoke("summarize-document", {
+            body: {
+              documentId: doc.id,
+              documentContent: documentContent,
+              documentTitle: formData.title,
+            },
+          });
+
+          if (summarizeError) {
+            console.error("Summarization error:", summarizeError);
+            toast({
+              title: "Analysis pending",
+              description: "Document uploaded. You can manually trigger analysis later.",
+            });
+          } else {
+            toast({
+              title: "Analysis complete",
+              description: "Your document has been analyzed successfully.",
+            });
+          }
+        } catch (summarizeErr) {
+          console.error("Summarization failed:", summarizeErr);
+        }
+      } else {
+        toast({
+          title: "Document uploaded",
+          description: "For PDF/Word files, please use the Re-analyze button on the document page after content extraction.",
+        });
+      }
+
+      // Navigate to the document detail page
+      navigate(`/documents/${doc.id}`);
     } catch (error: any) {
       console.error("Error:", error);
       toast({

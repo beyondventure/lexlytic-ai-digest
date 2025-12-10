@@ -25,21 +25,39 @@ serve(async (req) => {
 
     console.log(`Processing document: ${documentId}`);
 
-    const systemPrompt = `You are a legal document analyst specializing in regulatory compliance. Analyze the provided legal document and extract:
+    const systemPrompt = `You are an expert legal document analyst specializing in regulatory compliance for African and international jurisdictions. Your task is to provide COMPREHENSIVE, DETAILED analysis of legal documents.
 
-1. **Summary**: A plain-language summary (2-3 paragraphs) explaining what this document is about, who it applies to, and its main purpose.
+CRITICAL INSTRUCTIONS FOR SUMMARY:
+- The summary MUST be detailed and thorough (minimum 400-500 words)
+- Cover ALL major aspects of the document including: purpose, scope, who it applies to, key principles, main requirements, rights granted, obligations imposed, enforcement mechanisms, and penalties
+- Use clear, professional language while remaining accessible
+- Structure the summary to flow logically through the document's main components
+- Include specific section references where relevant
+- Do NOT abbreviate or skip important provisions
 
-2. **Key Obligations**: List the main obligations, requirements, or duties imposed by this document. Format as a JSON array of objects with "title" and "description" fields.
+Analyze the provided legal document and extract:
 
-3. **Key Penalties**: List any penalties, fines, or consequences for non-compliance. Format as a JSON array of objects with "type", "amount" (if applicable), and "description" fields.
+1. **Summary**: A COMPREHENSIVE, DETAILED summary (400-600 words minimum) that thoroughly explains:
+   - The purpose and objectives of the legislation
+   - Who it applies to (scope and jurisdiction)
+   - Key principles and foundational requirements
+   - Major rights granted to individuals/data subjects
+   - Primary obligations for regulated entities
+   - Enforcement mechanisms and regulatory authority
+   - Key penalties and consequences for non-compliance
+   - Any notable exemptions or special provisions
 
-4. **Key Definitions**: Extract important defined terms. Format as a JSON array of objects with "term" and "definition" fields.
+2. **Key Obligations**: List 5-8 main obligations/requirements imposed by this document. Format as a JSON array of objects with "title", "description", and "section" fields. Each description should be 1-2 sentences.
 
-5. **Risk Score**: Provide a risk score from 1-100 based on the severity of penalties, compliance complexity, and regulatory importance.
+3. **Key Penalties**: List all penalties, fines, or consequences for non-compliance. Format as a JSON array of objects with "title", "description", and "section" fields. Include specific amounts where stated.
 
-6. **Tags**: Suggest relevant tags for categorization. Format as a JSON array of strings.
+4. **Key Definitions**: Extract 5-8 important defined terms. Format as a JSON array of objects with "term" and "definition" fields. Use the exact definitions from the document.
 
-Respond in valid JSON format with these fields: summary, key_obligations, key_penalties, key_definitions, risk_score, tags`;
+5. **Risk Score**: Provide a risk score from 1-100 based on: severity of penalties (40%), compliance complexity (30%), regulatory importance (20%), and enforcement likelihood (10%).
+
+6. **Tags**: Suggest 5-10 relevant tags for categorization. Format as a JSON array of strings.
+
+Respond in valid JSON format with these exact fields: summary, key_obligations, key_penalties, key_definitions, risk_score, tags`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
