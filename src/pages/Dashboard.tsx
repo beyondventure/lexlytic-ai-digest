@@ -103,7 +103,7 @@ const Dashboard = () => {
     { icon: Upload, label: "Upload Document", href: "/documents/upload", color: "text-accent" },
     { icon: Globe, label: "Compare Jurisdictions", href: "/comparison", color: "text-info" },
     { icon: Bell, label: "Manage Alerts", href: "/alerts-settings", color: "text-warning" },
-    { icon: MessageSquare, label: "Ask AI", href: "/chat", color: "text-success" },
+    { icon: MessageSquare, label: "Ask Lexlytic", href: "/chat", color: "text-success" },
   ];
 
   const stats = [
