@@ -56,7 +56,7 @@ const plans = [
       "SSO & advanced security",
       "Custom integrations",
     ],
-    cta: "Contact Sales",
+    cta: "Get Started",
     popular: false,
   },
 ];
@@ -71,16 +71,12 @@ const faqs = [
     answer: "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately, and billing is prorated."
   },
   {
-    question: "Do you offer discounts for NGOs or educational institutions?",
-    answer: "Yes! We offer 50% off for verified non-profits and educational institutions. Contact our sales team to apply."
-  },
-  {
     question: "What jurisdictions are covered?",
-    answer: "We cover 100+ jurisdictions across Africa, including all 54 African countries, with deep coverage of Nigeria, Kenya, South Africa, Ghana, Egypt, and more."
+    answer: "We cover 50+ jurisdictions across Africa, including all 54 African countries, with deep coverage of Nigeria, Kenya, South Africa, Ghana, Egypt, and more."
   },
   {
     question: "Is my data secure?",
-    answer: "Absolutely. We use AES-256 encryption at rest, TLS 1.3 in transit, and are SOC2 Type II compliant. Your documents are never shared or used for training."
+    answer: "Absolutely. We use AES-256 encryption at rest and TLS 1.3 in transit. Your documents are never shared or used for training."
   },
   {
     question: "Can I export my data?",
