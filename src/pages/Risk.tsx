@@ -144,6 +144,27 @@ const Risk = () => {
           </p>
         </div>
 
+        {/* Risk Score Key */}
+        <Card className="mb-8 bg-secondary/30">
+          <CardContent className="py-4">
+            <div className="flex flex-wrap items-center gap-6">
+              <span className="text-sm font-medium text-foreground">Risk Score Key:</span>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-success" />
+                <span className="text-sm text-muted-foreground">0-49: Low Risk</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-warning" />
+                <span className="text-sm text-muted-foreground">50-69: Medium Risk</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-destructive" />
+                <span className="text-sm text-muted-foreground">70-100: High Risk</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Overall Score */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card className="md:col-span-1">
