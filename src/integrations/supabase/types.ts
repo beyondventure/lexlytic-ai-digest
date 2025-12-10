@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      alert_subscriptions: {
+        Row: {
+          created_at: string
+          email_enabled: boolean | null
+          frequency: string | null
+          id: string
+          is_active: boolean | null
+          jurisdictions: string[] | null
+          keywords: string[] | null
+          name: string
+          sectors: string[] | null
+          severity_filter: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_enabled?: boolean | null
+          frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          jurisdictions?: string[] | null
+          keywords?: string[] | null
+          name: string
+          sectors?: string[] | null
+          severity_filter?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_enabled?: boolean | null
+          frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          jurisdictions?: string[] | null
+          keywords?: string[] | null
+          name?: string
+          sectors?: string[] | null
+          severity_filter?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       alerts: {
         Row: {
           alert_type: string
@@ -45,6 +90,44 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          document_ids: string[] | null
+          id: string
+          title: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_ids?: string[] | null
+          id?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_ids?: string[] | null
+          id?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -97,6 +180,252 @@ export type Database = {
           summary?: string | null
           title?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      legal_documents: {
+        Row: {
+          created_at: string
+          document_type: string | null
+          file_name: string | null
+          file_size: number | null
+          file_type: string | null
+          file_url: string | null
+          full_text: string | null
+          id: string
+          jurisdiction: string | null
+          key_definitions: Json | null
+          key_obligations: Json | null
+          key_penalties: Json | null
+          risk_score: number | null
+          status: string | null
+          summary: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          uploaded_by: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_type?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          full_text?: string | null
+          id?: string
+          jurisdiction?: string | null
+          key_definitions?: Json | null
+          key_obligations?: Json | null
+          key_penalties?: Json | null
+          risk_score?: number | null
+          status?: string | null
+          summary?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          uploaded_by: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_type?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string | null
+          full_text?: string | null
+          id?: string
+          jurisdiction?: string | null
+          key_definitions?: Json | null
+          key_obligations?: Json | null
+          key_penalties?: Json | null
+          risk_score?: number | null
+          status?: string | null
+          summary?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_documents_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          citations: Json | null
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+        }
+        Insert: {
+          citations?: Json | null
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+        }
+        Update: {
+          citations?: Json | null
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          company: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          preferred_jurisdictions: string[] | null
+          preferred_sectors: string[] | null
+          role: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          preferred_jurisdictions?: string[] | null
+          preferred_sectors?: string[] | null
+          role?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          preferred_jurisdictions?: string[] | null
+          preferred_sectors?: string[] | null
+          role?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      regulatory_alerts: {
+        Row: {
+          created_at: string
+          description: string | null
+          effective_date: string | null
+          id: string
+          jurisdiction: string
+          sector: string | null
+          severity: string | null
+          source_url: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          effective_date?: string | null
+          id?: string
+          jurisdiction: string
+          sector?: string | null
+          severity?: string | null
+          source_url?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          effective_date?: string | null
+          id?: string
+          jurisdiction?: string
+          sector?: string | null
+          severity?: string | null
+          source_url?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      workspace_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspaces: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
