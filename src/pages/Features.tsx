@@ -202,9 +202,41 @@ const Features = () => {
                       ))}
                     </ul>
                   </div>
-                  <div className={`md:w-1/2 bg-gradient-to-br from-secondary to-muted p-8 flex items-center justify-center ${index % 2 === 0 ? '' : 'md:order-1'}`}>
-                    <div className="w-full max-w-sm aspect-video bg-card rounded-lg shadow-lg border border-border flex items-center justify-center">
-                      <feature.icon className="w-16 h-16 text-accent/30" />
+                  <div className={`md:w-1/2 bg-gradient-to-br from-accent/5 via-secondary to-muted p-8 flex items-center justify-center ${index % 2 === 0 ? '' : 'md:order-1'}`}>
+                    <div className="w-full max-w-md aspect-[4/3] bg-card rounded-xl shadow-2xl border border-border overflow-hidden relative">
+                      {/* Decorative UI mockup */}
+                      <div className="absolute inset-0 p-4">
+                        <div className="h-8 bg-muted rounded-lg mb-3 flex items-center px-3 gap-2">
+                          <div className="w-3 h-3 rounded-full bg-destructive/50" />
+                          <div className="w-3 h-3 rounded-full bg-warning/50" />
+                          <div className="w-3 h-3 rounded-full bg-success/50" />
+                          <div className="flex-1 h-4 bg-background/50 rounded ml-2" />
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                          <div className="h-20 bg-accent/10 rounded-lg flex items-center justify-center">
+                            <feature.icon className="w-8 h-8 text-accent/40" />
+                          </div>
+                          <div className="col-span-2 space-y-2">
+                            <div className="h-4 bg-muted rounded w-3/4" />
+                            <div className="h-3 bg-muted/60 rounded w-full" />
+                            <div className="h-3 bg-muted/60 rounded w-2/3" />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="h-10 bg-accent/20 rounded-lg flex items-center px-3">
+                            <Check className="w-4 h-4 text-accent mr-2" />
+                            <div className="h-3 bg-accent/30 rounded w-1/2" />
+                          </div>
+                          <div className="h-10 bg-muted/30 rounded-lg flex items-center px-3">
+                            <div className="w-4 h-4 border-2 border-muted-foreground/30 rounded mr-2" />
+                            <div className="h-3 bg-muted rounded w-2/3" />
+                          </div>
+                          <div className="h-10 bg-muted/30 rounded-lg flex items-center px-3">
+                            <div className="w-4 h-4 border-2 border-muted-foreground/30 rounded mr-2" />
+                            <div className="h-3 bg-muted rounded w-1/2" />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
