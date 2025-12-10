@@ -9,7 +9,7 @@ const plans = [
     name: "Startup/Entry Level",
     icon: Zap,
     price: "$500",
-    period: "/month",
+    period: "/region per annum",
     features: [
       "100 document uploads/month",
       "AI summarization & analysis",
@@ -25,7 +25,7 @@ const plans = [
     name: "Midsize",
     icon: Building2,
     price: "$750",
-    period: "/month",
+    period: "/region per annum",
     features: [
       "500 document uploads/month",
       "Advanced AI with citations",
@@ -44,7 +44,7 @@ const plans = [
     name: "Enterprise",
     icon: Crown,
     price: "$1,500",
-    period: "/month",
+    period: "/region per annum",
     features: [
       "Unlimited documents",
       "Full AI suite + customization",
