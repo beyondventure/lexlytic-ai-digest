@@ -6,48 +6,11 @@ import { Check, ArrowRight, Zap, Building2, Crown } from "lucide-react";
 
 const plans = [
   {
-    name: "Starter",
-    icon: Zap,
-    price: "$49",
-    period: "/month",
-    description: "Perfect for individual legal researchers and small practices",
-    features: [
-      "50 document uploads/month",
-      "AI summarization & analysis",
-      "5 jurisdictions",
-      "Basic regulatory alerts",
-      "Email support",
-      "1 user seat",
-    ],
-    cta: "Start Free Trial",
-    popular: false,
-  },
-  {
-    name: "Professional",
-    icon: Building2,
-    price: "$149",
-    period: "/month",
-    description: "For growing legal teams and compliance departments",
-    features: [
-      "500 document uploads/month",
-      "Advanced AI with citations",
-      "20 jurisdictions",
-      "Real-time alerts + digests",
-      "Comparison matrix",
-      "Priority support",
-      "5 user seats",
-      "Team workspaces",
-      "API access",
-    ],
-    cta: "Start Free Trial",
-    popular: true,
-  },
-  {
     name: "Enterprise",
     icon: Crown,
-    price: "Custom",
-    period: "",
-    description: "For large organizations with complex compliance needs",
+    pricePerRegion: "$1,500",
+    contractValue: "$15k annually",
+    revenueRequirement: "Gross revenue of $100M and above",
     features: [
       "Unlimited documents",
       "Full AI suite + customization",
@@ -58,9 +21,45 @@ const plans = [
       "Unlimited users",
       "SSO & advanced security",
       "Custom integrations",
-      "On-premise options",
     ],
     cta: "Contact Sales",
+    popular: false,
+  },
+  {
+    name: "Midsize",
+    icon: Building2,
+    pricePerRegion: "$750",
+    contractValue: "$7,500 annually",
+    revenueRequirement: "Gross revenue of >$25M up to $100M",
+    features: [
+      "500 document uploads/month",
+      "Advanced AI with citations",
+      "20 jurisdictions",
+      "Real-time alerts + digests",
+      "Comparison matrix",
+      "Priority support",
+      "10 user seats",
+      "Team workspaces",
+      "API access",
+    ],
+    cta: "Get Started",
+    popular: true,
+  },
+  {
+    name: "Startup/Entry Level",
+    icon: Zap,
+    pricePerRegion: "$500",
+    contractValue: "$1,000 annually",
+    revenueRequirement: "Gross Revenue of >$5M",
+    features: [
+      "100 document uploads/month",
+      "AI summarization & analysis",
+      "5 jurisdictions",
+      "Basic regulatory alerts",
+      "Email support",
+      "3 user seats",
+    ],
+    cta: "Start Free Trial",
     popular: false,
   },
 ];
@@ -162,12 +161,22 @@ const Pricing = () => {
                     <plan.icon className="w-6 h-6 text-accent" />
                   </div>
                   <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold text-foreground">{plan.price}</span>
-                    <span className="text-muted-foreground">{plan.period}</span>
+                  <div className="bg-secondary/50 rounded-lg p-4 space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Price range per region</span>
+                      <span className="text-lg font-bold text-foreground">{plan.pricePerRegion}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Avg. Contract Value</span>
+                      <span className="text-lg font-bold text-foreground">{plan.contractValue}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-center">
+                    <Badge variant="secondary" className="text-xs text-center">
+                      {plan.revenueRequirement}
+                    </Badge>
                   </div>
                   <Button 
                     className={`w-full ${plan.popular ? 'bg-accent hover:bg-accent/90' : ''}`}
@@ -205,8 +214,8 @@ const Pricing = () => {
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left py-4 px-4 font-medium text-muted-foreground">Feature</th>
-                  <th className="text-center py-4 px-4 font-medium text-foreground">Starter</th>
-                  <th className="text-center py-4 px-4 font-medium text-accent">Professional</th>
+                  <th className="text-center py-4 px-4 font-medium text-foreground">Startup/Entry</th>
+                  <th className="text-center py-4 px-4 font-medium text-accent">Midsize</th>
                   <th className="text-center py-4 px-4 font-medium text-foreground">Enterprise</th>
                 </tr>
               </thead>
