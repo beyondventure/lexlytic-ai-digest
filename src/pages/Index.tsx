@@ -12,7 +12,8 @@ import {
   Sparkles,
   Building2,
   Scale,
-  Briefcase
+  Briefcase,
+  TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -132,8 +133,50 @@ const Index = () => {
         
         {/* Minimal decorative elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Subtle gradient blobs */}
           <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-accent/8 rounded-full blur-3xl" />
           <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-primary/8 rounded-full blur-3xl" />
+          
+          {/* Floating accent card - left */}
+          <div className="hidden lg:block absolute top-32 left-[8%] w-48 h-32 bg-card/70 backdrop-blur-sm rounded-xl border border-border/50 shadow-lg animate-float p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-lg bg-accent/20 flex items-center justify-center">
+                <FileText className="w-3.5 h-3.5 text-accent" />
+              </div>
+              <span className="text-xs font-medium text-foreground">Document Analysis</span>
+            </div>
+            <div className="space-y-1.5">
+              <div className="h-1.5 bg-muted rounded-full w-full" />
+              <div className="h-1.5 bg-muted rounded-full w-3/4" />
+              <div className="h-1.5 bg-accent/40 rounded-full w-1/2" />
+            </div>
+          </div>
+
+          {/* Floating accent card - right */}
+          <div className="hidden lg:block absolute top-48 right-[8%] w-44 h-28 bg-card/70 backdrop-blur-sm rounded-xl border border-border/50 shadow-lg animate-float-delayed p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-lg bg-primary/20 flex items-center justify-center">
+                <Globe className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <span className="text-xs font-medium text-foreground">50+ Jurisdictions</span>
+            </div>
+            <div className="grid grid-cols-4 gap-1">
+              {['NG', 'GH', 'KE', 'ZA'].map((code) => (
+                <div key={code} className="h-5 bg-muted rounded flex items-center justify-center text-[10px] text-muted-foreground font-medium">
+                  {code}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Small floating stat - bottom */}
+          <div className="hidden md:block absolute bottom-24 left-[12%] w-36 h-20 bg-card/70 backdrop-blur-sm rounded-xl border border-border/50 shadow-lg animate-float-slow p-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <TrendingUp className="w-3 h-3 text-green-500" />
+              <span className="text-[10px] font-medium text-foreground">Compliance</span>
+            </div>
+            <div className="text-xl font-bold text-foreground">94%</div>
+          </div>
         </div>
 
         <div className="container mx-auto text-center max-w-4xl relative z-10">
