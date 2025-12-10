@@ -1,4 +1,4 @@
-import { Navigation } from "@/components/Navigation";
+import { CBNNavigation } from "@/components/CBNNavigation";
 import { useState } from "react";
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { Card } from "@/components/ui/card";
@@ -48,7 +48,7 @@ const Alerts = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation onChatOpen={() => setIsChatOpen(true)} />
+      <CBNNavigation onChatOpen={() => setIsChatOpen(true)} />
       <ChatSidebar isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
       
       <main className="container mx-auto px-6 pt-24 pb-12">

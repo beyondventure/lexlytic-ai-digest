@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
+import CBNPortal from "./pages/CBNPortal";
 import Rulebook from "./pages/Rulebook";
 import Alerts from "./pages/Alerts";
 import Reports from "./pages/Reports";
@@ -19,6 +20,11 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/cbn-portal" element={<CBNPortal />} />
+          <Route path="/cbn-portal/rulebook" element={<Rulebook />} />
+          <Route path="/cbn-portal/alerts" element={<Alerts />} />
+          <Route path="/cbn-portal/reports" element={<Reports />} />
+          {/* Legacy routes - redirect to CBN portal */}
           <Route path="/rulebook" element={<Rulebook />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/reports" element={<Reports />} />
