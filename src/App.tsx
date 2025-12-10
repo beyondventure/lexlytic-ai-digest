@@ -50,13 +50,13 @@ const App = () => (
           <Route path="/alerts-settings" element={<AlertSettings />} />
           <Route path="/translate" element={<Translate />} />
           
-          {/* CBN Portal routes */}
-          <Route path="/cbn-portal" element={<CBNPortal />} />
-          <Route path="/cbn-portal/rulebook" element={<Rulebook />} />
-          <Route path="/cbn-portal/alerts" element={<Alerts />} />
-          <Route path="/cbn-portal/reports" element={<Reports />} />
+          {/* CBN Co-pilot routes */}
+          <Route path="/cbn-copilot" element={<CBNPortal />} />
+          <Route path="/cbn-copilot/rulebook" element={<Rulebook />} />
+          <Route path="/cbn-copilot/alerts" element={<Alerts />} />
+          <Route path="/cbn-copilot/reports" element={<Reports />} />
           
-          {/* Legacy routes - redirect to CBN portal */}
+          {/* Legacy routes - redirect to CBN Co-pilot */}
           <Route path="/rulebook" element={<Rulebook />} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/reports" element={<Reports />} />

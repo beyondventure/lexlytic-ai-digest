@@ -128,8 +128,8 @@ const Features = () => {
             <span className="text-xl font-bold text-foreground">Lexlytic</span>
           </Link>
           <div className="hidden md:flex items-center gap-6">
-            <Link to="/cbn-portal" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              CBN Portal
+            <Link to="/cbn-copilot" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              CBN Co-pilot
             </Link>
             <Link to="/features" className="text-sm font-medium text-accent transition-colors">
               Features

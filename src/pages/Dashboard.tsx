@@ -138,7 +138,7 @@ const Dashboard = () => {
             <Link to="/documents" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Documents</Link>
             <Link to="/comparison" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Comparison</Link>
             <Link to="/risk" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Risk</Link>
-            <Link to="/cbn-portal" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">CBN Portal</Link>
+            <Link to="/cbn-copilot" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">CBN Co-pilot</Link>
           </div>
 
           <div className="flex items-center gap-3">
