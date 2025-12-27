@@ -20,6 +20,7 @@ import Risk from "./pages/Risk";
 import AlertSettings from "./pages/AlertSettings";
 import Translate from "./pages/Translate";
 import DocumentDetail from "./pages/DocumentDetail";
+import Resources from "./pages/Resources";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/risk" element={<Risk />} />
           <Route path="/alerts-settings" element={<AlertSettings />} />
           <Route path="/translate" element={<Translate />} />
+          <Route path="/resources" element={<Resources />} />
           
           {/* CBN Co-pilot routes */}
           <Route path="/cbn-copilot" element={<CBNPortal />} />

@@ -170,6 +170,7 @@ const Dashboard = () => {
           <div className="hidden md:flex items-center gap-6">
             <Link to="/dashboard" className="text-sm font-medium text-accent">Dashboard</Link>
             <Link to="/documents" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Documents</Link>
+            <Link to="/resources" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Resources</Link>
             <Link to="/comparison" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Comparison</Link>
             <Link to="/risk" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Risk</Link>
             <Link to="/cbn-copilot" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">CBN Co-pilot</Link>

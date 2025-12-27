@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      african_law_resources: {
+        Row: {
+          category: string | null
+          crawled_at: string
+          description: string | null
+          id: string
+          jurisdiction: string | null
+          resource_type: string | null
+          source_site: string
+          title: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          category?: string | null
+          crawled_at?: string
+          description?: string | null
+          id?: string
+          jurisdiction?: string | null
+          resource_type?: string | null
+          source_site: string
+          title?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          category?: string | null
+          crawled_at?: string
+          description?: string | null
+          id?: string
+          jurisdiction?: string | null
+          resource_type?: string | null
+          source_site?: string
+          title?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       alert_subscriptions: {
         Row: {
           created_at: string
