@@ -161,7 +161,7 @@ const Resources = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">African Law Resources</h1>
           <p className="text-muted-foreground">
-            Comprehensive collection of legal documents from Open Law Africa and African LII
+            Comprehensive collection of African legal documents from various reputable sources
           </p>
         </div>
 
