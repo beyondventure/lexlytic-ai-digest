@@ -6,46 +6,75 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const CBN_SYSTEM_PROMPT = `You are Lexlytic, an expert AI assistant specialized in Central Bank of Nigeria (CBN) regulations, circulars, guidelines, and compliance requirements.
+const LEXLYTIC_SYSTEM_PROMPT = `You are Lexlytic, an expert AI assistant specialized in African legal frameworks, Central Bank of Nigeria (CBN) regulations, and pan-African legal resources.
 
 ## Your Core Knowledge Areas:
 
-### Banking Supervision
+### Nigerian Banking & Finance Regulations (CBN)
 - Banks and Other Financial Institutions Act (BOFIA) 2020
 - Prudential Guidelines for Deposit Money Banks
 - Capital adequacy and risk management frameworks
-
-### Payment Systems
 - CBN Payment Systems Vision 2025
 - Payment Service Banks (PSB) and Payment Service Providers (PSP) regulations
 - Agent Banking and Mobile Money guidelines
 - POS and ATM operations guidelines
-
-### KYC & AML/CFT
 - CBN AML/CFT Regulations 2022
 - Three-Tiered KYC: Tier 1 (₦50k daily/₦300k balance), Tier 2 (₦200k daily/₦500k balance), Tier 3 (unlimited)
 - BVN requirements, Customer Due Diligence, Suspicious Transaction Reporting
-
-### Fintech & Digital Services
 - Open Banking Framework, Regulatory Sandbox
 - Digital Lending guidelines, Crowdfunding regulations
 
+### Pan-African Legal Frameworks
+- African Union legal instruments and treaties
+- Regional Economic Communities (RECs) legal frameworks
+- ECOWAS, SADC, EAC, COMESA regulations
+- African Continental Free Trade Area (AfCFTA)
+- African Court on Human and Peoples' Rights jurisprudence
+- African Commission on Human and Peoples' Rights decisions
+
+### National Legal Systems Across Africa
+- Constitutional law and governance frameworks
+- Commercial and business law
+- Labor and employment law
+- Environmental law and regulations
+- Land and property law
+- Criminal law and procedure
+- Family law and succession
+- Tax law and fiscal policy
+
+### Legal Resources & Institutions
+- AfricanLII legal information databases
+- Open Law Africa resources
+- National law reports and gazettes
+- Court judgments and precedents
+- Legal reforms and legislative developments
+
 ## CRITICAL CITATION INSTRUCTIONS:
 
-When citing documents, you MUST include the PDF URL on its own line so users can click it. Use this EXACT format:
+When citing documents or resources, you MUST include the URL on its own line so users can click it. Use this EXACT format:
 
+For CBN Documents:
 📄 **[Reference Number] - [Title]** (Issued: [Date])
 https://[full-pdf-url].pdf
 
-Example:
+For African Law Resources:
+📚 **[Title]** - [Jurisdiction] | [Category]
+https://[resource-url]
+
+Example CBN Citation:
 📄 **PSP/DIR/CON/CWO/001/049 - Circular and Guidelines for Agent Banking** (Issued: 2025-10-06)
 https://www.cbn.gov.ng/Out/2025/CCD/CIRCULAR%20AND%20GUIDELINES.pdf
 
+Example African Law Citation:
+📚 **Kenya Companies Act** - Kenya | Commercial Law
+https://africanlii.org/ke/legislation/act/2015/companies-act
+
 IMPORTANT:
-- ALWAYS put the PDF URL on its own line after the citation
-- NEVER cite a document without including its PDF URL
-- Use the exact PDF URLs provided in the document database below
-- If no PDF URL is available, say "PDF not available - check CBN website"`;
+- ALWAYS put the URL on its own line after the citation
+- NEVER cite a document without including its URL
+- Use the exact URLs provided in the document databases below
+- Cross-reference between CBN documents and African law resources when relevant
+- Provide comparative analysis across different African jurisdictions when helpful`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -62,6 +91,7 @@ serve(async (req) => {
     }
 
     let documentContext = "";
+    let africanLawContext = "";
     
     // Fetch relevant documents from the database to provide context
     try {
@@ -69,16 +99,16 @@ serve(async (req) => {
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
       
-      // Fetch all documents with PDF URLs
-      const { data: documents, error } = await supabase
+      // Fetch CBN documents with PDF URLs
+      const { data: documents, error: docError } = await supabase
         .from("documents")
         .select("id, title, reference_number, document_type, category, summary, issue_date, pdf_url")
         .order("issue_date", { ascending: false })
-        .limit(25);
+        .limit(30);
       
-      if (!error && documents && documents.length > 0) {
+      if (!docError && documents && documents.length > 0) {
         documentContext = `\n\n## CBN DOCUMENTS DATABASE (Include PDF URLs in your citations!):\n\n${documents.map((doc: any, idx: number) => 
-          `### Document ${idx + 1}:
+          `### CBN Document ${idx + 1}:
 - Reference: ${doc.reference_number || 'N/A'}
 - Title: ${doc.title}
 - Type: ${doc.document_type}
@@ -88,18 +118,49 @@ serve(async (req) => {
 - Summary: ${doc.summary || 'No summary'}`
         ).join('\n\n')}`;
         
-        console.log(`Found ${documents.length} documents for context`);
+        console.log(`Found ${documents.length} CBN documents for context`);
       } else {
-        console.log("No documents found or error:", error);
-        documentContext = "\n\n[NOTE: No CBN documents currently in database. Recommend syncing from CBN website.]";
+        console.log("No CBN documents found or error:", docError);
       }
+
+      // Fetch African law resources
+      const { data: africanResources, error: resourceError } = await supabase
+        .from("african_law_resources")
+        .select("id, title, description, url, source_site, resource_type, jurisdiction, category")
+        .order("crawled_at", { ascending: false })
+        .limit(100);
+      
+      if (!resourceError && africanResources && africanResources.length > 0) {
+        africanLawContext = `\n\n## AFRICAN LAW RESOURCES DATABASE (Include URLs in your citations!):\n\n${africanResources.map((resource: any, idx: number) => 
+          `### African Law Resource ${idx + 1}:
+- Title: ${resource.title || 'Untitled'}
+- Source: ${resource.source_site}
+- Type: ${resource.resource_type || 'Unknown'}
+- Jurisdiction: ${resource.jurisdiction || 'Pan-African'}
+- Category: ${resource.category || 'General'}
+- URL: ${resource.url}
+- Description: ${resource.description || 'No description'}`
+        ).join('\n\n')}`;
+        
+        console.log(`Found ${africanResources.length} African law resources for context`);
+      } else {
+        console.log("No African law resources found or error:", resourceError);
+      }
+
     } catch (dbError) {
       console.error("Error fetching documents:", dbError);
     }
 
-    const systemPromptWithContext = CBN_SYSTEM_PROMPT + documentContext;
+    // Combine all context
+    const fullContext = documentContext + africanLawContext;
+    
+    if (!documentContext && !africanLawContext) {
+      console.log("No context available from databases");
+    }
 
-    console.log("Calling Lovable AI gateway with document context...");
+    const systemPromptWithContext = LEXLYTIC_SYSTEM_PROMPT + fullContext;
+
+    console.log("Calling Lovable AI gateway with comprehensive African law context...");
     
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
