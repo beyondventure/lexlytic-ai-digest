@@ -52,6 +52,7 @@ const Resources = () => {
   const [jurisdictionFilter, setJurisdictionFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [downloadableFilter, setDownloadableFilter] = useState<string>("all");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -105,9 +106,15 @@ const Resources = () => {
     const matchesJurisdiction = jurisdictionFilter === "all" || r.jurisdiction === jurisdictionFilter;
     const matchesCategory = categoryFilter === "all" || r.category === categoryFilter;
     const matchesSource = sourceFilter === "all" || r.source_site === sourceFilter;
+    const matchesDownloadable = downloadableFilter === "all" || 
+      (downloadableFilter === "downloadable" && r.storage_path) ||
+      (downloadableFilter === "external" && !r.storage_path);
     
-    return matchesSearch && matchesJurisdiction && matchesCategory && matchesSource;
+    return matchesSearch && matchesJurisdiction && matchesCategory && matchesSource && matchesDownloadable;
   }) || [];
+
+  // Count downloadable resources
+  const downloadableCount = resources?.filter(r => r.storage_path).length || 0;
 
   const getCategoryIcon = (category: string | null) => {
     switch (category) {
@@ -207,10 +214,10 @@ const Resources = () => {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <FileText className="h-5 w-5 text-success" />
+                <Download className="h-5 w-5 text-success" />
                 <div>
-                  <div className="text-2xl font-bold text-foreground">{sources.length}</div>
-                  <div className="text-sm text-muted-foreground">Sources</div>
+                  <div className="text-2xl font-bold text-foreground">{downloadableCount}</div>
+                  <div className="text-sm text-muted-foreground">Downloadable</div>
                 </div>
               </div>
             </CardContent>
@@ -261,6 +268,16 @@ const Resources = () => {
                   {sources.map(s => (
                     <SelectItem key={s} value={s!}>{s}</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+              <Select value={downloadableFilter} onValueChange={setDownloadableFilter}>
+                <SelectTrigger className="w-full md:w-[180px]">
+                  <SelectValue placeholder="Availability" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Resources</SelectItem>
+                  <SelectItem value="downloadable">Downloadable Only</SelectItem>
+                  <SelectItem value="external">External Links Only</SelectItem>
                 </SelectContent>
               </Select>
             </div>

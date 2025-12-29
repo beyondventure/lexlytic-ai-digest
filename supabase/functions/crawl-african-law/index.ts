@@ -41,17 +41,40 @@ serve(async (req) => {
       // No body provided, use default
     }
 
-    // Sites to crawl
+    // Sites to crawl - expanded list for more coverage
     const sites = [
       {
         url: "https://www.openlawafrica.org/african-law-index",
-        name: "Open Law Africa"
+        name: "Open Law Africa",
+        mapUrl: "https://www.openlawafrica.org"
       },
       {
         url: "https://africanlii.org/en/",
-        name: "African Legal Information Institute"
+        name: "African LII",
+        mapUrl: "https://africanlii.org"
+      },
+      {
+        url: "https://nigerialii.org/en/",
+        name: "Nigerian LII",
+        mapUrl: "https://nigerialii.org"
+      },
+      {
+        url: "http://www.saflii.org/",
+        name: "SAFLII",
+        mapUrl: "http://www.saflii.org"
       }
     ];
+    
+    // Helper to check if URL is a PDF
+    const isPdfUrl = (url: string) => {
+      const lowerUrl = url.toLowerCase();
+      return lowerUrl.endsWith('.pdf') || 
+             lowerUrl.includes('/source.pdf') ||
+             lowerUrl.includes('format=pdf') ||
+             lowerUrl.includes('download/pdf') ||
+             lowerUrl.includes('/pdf/') ||
+             (lowerUrl.includes('.pdf') && !lowerUrl.includes('.pdf.'));
+    };
 
     const allResults: CrawlResult[] = [];
     let pdfDownloadCount = 0;
@@ -89,8 +112,8 @@ serve(async (req) => {
           // Extract metadata from URL path
           const result = parseUrlMetadata(url, site.name);
           
-          // Download PDF if it's a PDF
-          if (url.toLowerCase().endsWith('.pdf') && downloadAllPdfs) {
+          // Download PDF if it's a PDF (using improved detection)
+          if (isPdfUrl(url) && downloadAllPdfs) {
             console.log(`Attempting to download PDF: ${url}`);
             const storagePath = await downloadAndStorePdf(supabase, url);
             if (storagePath) {
@@ -131,7 +154,7 @@ serve(async (req) => {
               // Check if not already in results
               if (!allResults.some(r => r.url === result.url)) {
                 // Download PDF if applicable
-                if (link.toLowerCase().endsWith('.pdf') && downloadAllPdfs) {
+                if (isPdfUrl(link) && downloadAllPdfs) {
                   console.log(`Attempting to download PDF: ${link}`);
                   const storagePath = await downloadAndStorePdf(supabase, link);
                   if (storagePath) {
@@ -163,7 +186,9 @@ serve(async (req) => {
         title: r.title || extractTitleFromUrl(r.url),
         description: r.description,
         source_site: r.url.includes('openlawafrica') ? 'Open Law Africa' : 
-                     r.url.includes('africanlii') ? 'African LII' : 'Other',
+                     r.url.includes('africanlii') ? 'African LII' : 
+                     r.url.includes('nigerialii') ? 'Nigerian LII' : 
+                     r.url.includes('saflii') ? 'SAFLII' : 'Other',
         resource_type: r.resourceType || categorizeResourceType(r.url),
         jurisdiction: r.jurisdiction || extractJurisdiction(r.url),
         category: r.category || categorizeResource(r.url),
