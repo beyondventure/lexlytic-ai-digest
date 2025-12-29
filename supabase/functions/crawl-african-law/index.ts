@@ -81,7 +81,7 @@ serve(async (req) => {
       }
     ];
     
-    // Helper to check if URL is a PDF
+    // Helper to check if URL is a PDF - expanded detection
     const isPdfUrl = (url: string) => {
       const lowerUrl = url.toLowerCase();
       // Skip SAFLII URLs due to SSL certificate issues
@@ -93,7 +93,37 @@ serve(async (req) => {
              lowerUrl.includes('format=pdf') ||
              lowerUrl.includes('download/pdf') ||
              lowerUrl.includes('/pdf/') ||
+             lowerUrl.includes('getpdf') ||
+             lowerUrl.includes('viewpdf') ||
+             lowerUrl.includes('pdfdownloads') ||
+             lowerUrl.includes('fileadmin') ||
+             lowerUrl.includes('/akn/') && lowerUrl.includes('source') ||
              (lowerUrl.includes('.pdf') && !lowerUrl.includes('.pdf.'));
+    };
+
+    // Helper to extract PDF links from a page
+    const extractPdfLinksFromPage = async (pageUrl: string): Promise<string[]> => {
+      try {
+        const scrapeResp = await fetch('https://api.firecrawl.dev/v1/scrape', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url: pageUrl,
+            formats: ['links'],
+          }),
+        });
+        
+        if (!scrapeResp.ok) return [];
+        
+        const data = await scrapeResp.json();
+        const links = data.data?.links || data.links || [];
+        return links.filter((link: string) => isPdfUrl(link));
+      } catch {
+        return [];
+      }
     };
 
     const allResults: CrawlResult[] = [];
@@ -144,6 +174,35 @@ serve(async (req) => {
           }
           
           allResults.push(result);
+        }
+
+        // Secondary pass: Look for PDF links on legislation/document pages
+        const documentPages = urls.filter((u: string) => {
+          const lower = u.toLowerCase();
+          return lower.includes('/act/') || 
+                 lower.includes('/legislation/') || 
+                 lower.includes('/judgment/') ||
+                 lower.includes('/akn/') ||
+                 lower.includes('/document/');
+        }).slice(0, 20); // Limit to avoid timeout
+        
+        console.log(`Checking ${documentPages.length} document pages for PDF links`);
+        
+        for (const pageUrl of documentPages) {
+          const pdfLinks = await extractPdfLinksFromPage(pageUrl);
+          for (const pdfLink of pdfLinks) {
+            if (!allResults.some(r => r.url === pdfLink)) {
+              console.log(`Found PDF link on page: ${pdfLink}`);
+              const result = parseUrlMetadata(pdfLink, site.name);
+              const storagePath = await downloadAndStorePdf(supabase, pdfLink);
+              if (storagePath) {
+                result.storagePath = storagePath;
+                pdfDownloadCount++;
+                console.log(`PDF stored (${pdfDownloadCount}): ${storagePath}`);
+              }
+              allResults.push(result);
+            }
+          }
         }
 
         // Also scrape the main page to get additional links and context
