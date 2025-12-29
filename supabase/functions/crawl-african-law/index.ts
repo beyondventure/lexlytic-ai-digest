@@ -236,20 +236,45 @@ async function downloadAndStorePdf(
   pdfUrl: string
 ): Promise<string | null> {
   try {
-    // Download the PDF
+    // Create HTTP client that bypasses SSL certificate validation for problematic sites
+    // This is needed for sites like SAFLII that have certificate issues
+    const client = Deno.createHttpClient({
+      caCerts: [],  // Empty array to skip cert validation
+    });
+
+    // Download the PDF with custom client
     const response = await fetch(pdfUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/pdf,*/*',
       },
+      // @ts-ignore - Deno specific option
+      client: client,
     });
 
     if (!response.ok) {
       console.error(`Failed to download PDF: ${response.status} - ${pdfUrl}`);
+      client.close();
+      return null;
+    }
+
+    // Check content type to make sure it's actually a PDF
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('pdf') && !contentType.includes('octet-stream')) {
+      console.log(`Skipping non-PDF content: ${contentType} - ${pdfUrl}`);
+      client.close();
       return null;
     }
 
     const pdfBlob = await response.blob();
     const pdfBuffer = await pdfBlob.arrayBuffer();
+    
+    // Skip very small files (likely error pages)
+    if (pdfBuffer.byteLength < 1000) {
+      console.log(`Skipping small file (${pdfBuffer.byteLength} bytes): ${pdfUrl}`);
+      client.close();
+      return null;
+    }
     
     // Generate a clean filename from URL
     const urlObj = new URL(pdfUrl);
@@ -259,7 +284,9 @@ async function downloadAndStorePdf(
     
     // Determine folder based on source
     const folder = pdfUrl.includes('openlawafrica') ? 'openlaw' : 
-                   pdfUrl.includes('africanlii') ? 'africanlii' : 'other';
+                   pdfUrl.includes('africanlii') ? 'africanlii' : 
+                   pdfUrl.includes('saflii') ? 'saflii' :
+                   pdfUrl.includes('nigerialii') ? 'nigerialii' : 'other';
     const storagePath = `${folder}/${Date.now()}_${cleanFileName}`;
 
     // Upload to Supabase storage
@@ -270,11 +297,14 @@ async function downloadAndStorePdf(
         upsert: true,
       });
 
+    client.close();
+
     if (error) {
       console.error(`Failed to upload PDF:`, error.message);
       return null;
     }
 
+    console.log(`Successfully stored PDF: ${storagePath} (${Math.round(pdfBuffer.byteLength / 1024)}KB)`);
     return data.path;
   } catch (error) {
     console.error(`Error downloading/storing PDF:`, error);
