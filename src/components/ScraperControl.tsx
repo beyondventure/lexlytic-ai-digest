@@ -12,19 +12,21 @@ export const ScraperControl = () => {
   const runScraper = async () => {
     setIsScraperRunning(true);
     try {
-      const { data, error } = await supabase.functions.invoke('scrape-cbn');
+      const { data, error } = await supabase.functions.invoke('scrape-cbn', {
+        body: { limit: 10 } // Test with 10 documents
+      });
       
       if (error) throw error;
 
       toast({
-        title: "Scraping Complete",
-        description: `Successfully processed ${data.processed} documents`,
+        title: "Sync Complete",
+        description: `Added: ${data.processed}, PDFs stored: ${data.pdfsStored || 0}, Skipped: ${data.skipped}`,
       });
     } catch (error) {
       console.error('Scraper error:', error);
       toast({
-        title: "Scraping Failed",
-        description: error instanceof Error ? error.message : "Failed to scrape CBN website",
+        title: "Sync Failed",
+        description: error instanceof Error ? error.message : "Failed to sync CBN documents",
         variant: "destructive",
       });
     } finally {

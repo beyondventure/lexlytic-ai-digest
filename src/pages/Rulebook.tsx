@@ -4,10 +4,11 @@ import { ChatSidebar } from "@/components/ChatSidebar";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, FileText } from "lucide-react";
+import { Search, Filter, FileText, Download, ExternalLink } from "lucide-react";
 import { useDocuments } from "@/hooks/useDocuments";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
 
 const Rulebook = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -57,50 +58,89 @@ const Rulebook = () => {
                 </Card>
               ))
             ) : documents && documents.length > 0 ? (
-              documents.map((doc) => (
-                <Card
-                  key={doc.id}
-                  className="p-6 hover:shadow-lg transition-all duration-200 border-l-4 border-l-accent cursor-pointer group"
-                  onClick={() => doc.pdf_url && window.open(doc.pdf_url, '_blank')}
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 flex-wrap mb-2">
-                          <FileText className="h-5 w-5 text-accent" />
-                          <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors">
-                            {doc.title}
-                          </h3>
-                        </div>
-                        {doc.reference_number && (
-                          <p className="text-sm text-muted-foreground mb-2">
-                            Reference: {doc.reference_number}
-                          </p>
-                        )}
-                        {doc.summary && (
-                          <p className="text-sm text-muted-foreground leading-relaxed">
-                            {doc.summary.substring(0, 200)}...
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        {doc.category && doc.category.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {doc.category.slice(0, 2).map((cat, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs">
-                                {cat}
-                              </Badge>
-                            ))}
+              documents.map((doc) => {
+                // Get download URL from storage if available
+                const getDownloadUrl = () => {
+                  if (doc.storage_path) {
+                    const { data } = supabase.storage
+                      .from('regulatory-pdfs')
+                      .getPublicUrl(doc.storage_path);
+                    return data.publicUrl;
+                  }
+                  return doc.pdf_url;
+                };
+
+                const handleDownload = (e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  const url = getDownloadUrl();
+                  if (url) {
+                    window.open(url, '_blank');
+                  }
+                };
+
+                return (
+                  <Card
+                    key={doc.id}
+                    className="p-6 hover:shadow-lg transition-all duration-200 border-l-4 border-l-accent cursor-pointer group"
+                    onClick={() => doc.pdf_url && window.open(doc.pdf_url, '_blank')}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap mb-2">
+                            <FileText className="h-5 w-5 text-accent" />
+                            <h3 className="font-semibold text-foreground group-hover:text-accent transition-colors">
+                              {doc.title}
+                            </h3>
                           </div>
-                        )}
-                        <Badge variant="default" className="bg-success text-white">
-                          {doc.document_type}
-                        </Badge>
+                          {doc.reference_number && (
+                            <p className="text-sm text-muted-foreground mb-2">
+                              Reference: {doc.reference_number}
+                            </p>
+                          )}
+                          {doc.summary && (
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                              {doc.summary.substring(0, 200)}...
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-2 items-end">
+                          {doc.category && doc.category.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {doc.category.slice(0, 2).map((cat, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs">
+                                  {cat}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                          <Badge variant="default" className="bg-success text-white">
+                            {doc.document_type}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant={doc.storage_path ? "default" : "outline"}
+                            className={doc.storage_path ? "bg-accent hover:bg-accent/90" : ""}
+                            onClick={handleDownload}
+                          >
+                            {doc.storage_path ? (
+                              <>
+                                <Download className="h-4 w-4 mr-1" />
+                                Download
+                              </>
+                            ) : (
+                              <>
+                                <ExternalLink className="h-4 w-4 mr-1" />
+                                View Source
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              ))
+                  </Card>
+                );
+              })
             ) : (
               <Card className="p-12 text-center">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
