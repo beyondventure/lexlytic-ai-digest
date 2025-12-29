@@ -76,7 +76,7 @@ const Resources = () => {
   const crawlMutation = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('crawl-african-law', {
-        body: { pdfLimit: 10 } // Test with 10 PDFs
+        body: { downloadAllPdfs: true }
       });
       if (error) throw error;
       return data;

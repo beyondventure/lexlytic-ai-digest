@@ -32,11 +32,11 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Parse request body for limit option
-    let pdfLimit = 10; // Default to 10 PDFs for testing
+    // Parse request body for options
+    let downloadAllPdfs = true; // Download all PDFs by default
     try {
       const body = await req.json();
-      if (body.pdfLimit) pdfLimit = body.pdfLimit;
+      if (body.downloadAllPdfs !== undefined) downloadAllPdfs = body.downloadAllPdfs;
     } catch {
       // No body provided, use default
     }
@@ -89,14 +89,14 @@ serve(async (req) => {
           // Extract metadata from URL path
           const result = parseUrlMetadata(url, site.name);
           
-          // Download PDF if it's a PDF and we haven't reached the limit
-          if (url.toLowerCase().endsWith('.pdf') && pdfDownloadCount < pdfLimit) {
+          // Download PDF if it's a PDF
+          if (url.toLowerCase().endsWith('.pdf') && downloadAllPdfs) {
             console.log(`Attempting to download PDF: ${url}`);
             const storagePath = await downloadAndStorePdf(supabase, url);
             if (storagePath) {
               result.storagePath = storagePath;
               pdfDownloadCount++;
-              console.log(`PDF stored (${pdfDownloadCount}/${pdfLimit}): ${storagePath}`);
+              console.log(`PDF stored (${pdfDownloadCount}): ${storagePath}`);
             }
           }
           
@@ -131,13 +131,13 @@ serve(async (req) => {
               // Check if not already in results
               if (!allResults.some(r => r.url === result.url)) {
                 // Download PDF if applicable
-                if (link.toLowerCase().endsWith('.pdf') && pdfDownloadCount < pdfLimit) {
+                if (link.toLowerCase().endsWith('.pdf') && downloadAllPdfs) {
                   console.log(`Attempting to download PDF: ${link}`);
                   const storagePath = await downloadAndStorePdf(supabase, link);
                   if (storagePath) {
                     result.storagePath = storagePath;
                     pdfDownloadCount++;
-                    console.log(`PDF stored (${pdfDownloadCount}/${pdfLimit}): ${storagePath}`);
+                    console.log(`PDF stored (${pdfDownloadCount}): ${storagePath}`);
                   }
                 }
                 allResults.push(result);
