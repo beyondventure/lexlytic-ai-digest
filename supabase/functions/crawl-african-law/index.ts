@@ -16,10 +16,31 @@ interface CrawlResult {
   storagePath?: string;
 }
 
+// Timeout wrapper for fetch requests
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 10000): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const startTime = Date.now();
+  const MAX_RUNTIME_MS = 50000; // 50 seconds max to leave buffer
 
   try {
     const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
@@ -33,7 +54,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Parse request body for options
-    let downloadAllPdfs = true; // Download all PDFs by default
+    let downloadAllPdfs = true;
     try {
       const body = await req.json();
       if (body.downloadAllPdfs !== undefined) downloadAllPdfs = body.downloadAllPdfs;
@@ -41,14 +62,11 @@ serve(async (req) => {
       // No body provided, use default
     }
 
-    // Sites to crawl - expanded list for more coverage
-    // NOTE: SAFLII has SSL certificate issues so PDFs from there can't be downloaded
+    // Helper to check if we should continue or stop due to timeout
+    const shouldContinue = () => (Date.now() - startTime) < MAX_RUNTIME_MS;
+
+    // Reduced site list - focus on sites that work well
     const sites = [
-      {
-        url: "https://www.openlawafrica.org/african-law-index",
-        name: "Open Law Africa",
-        mapUrl: "https://www.openlawafrica.org"
-      },
       {
         url: "https://africanlii.org/en/",
         name: "African LII",
@@ -58,83 +76,35 @@ serve(async (req) => {
         url: "https://nigerialii.org/en/",
         name: "Nigerian LII",
         mapUrl: "https://nigerialii.org"
-      },
-      {
-        url: "http://kenyalaw.org/kl/",
-        name: "Kenya Law",
-        mapUrl: "http://kenyalaw.org"
-      },
-      {
-        url: "https://lawsofnigeria.placng.org/laws/",
-        name: "Laws of Nigeria",
-        mapUrl: "https://lawsofnigeria.placng.org"
-      },
-      {
-        url: "https://tanzlii.org/",
-        name: "Tanzania LII",
-        mapUrl: "https://tanzlii.org"
-      },
-      {
-        url: "https://ulii.org/",
-        name: "Uganda LII",
-        mapUrl: "https://ulii.org"
       }
     ];
     
-    // Helper to check if URL is a PDF - expanded detection
+    // Helper to check if URL is a PDF
     const isPdfUrl = (url: string) => {
       const lowerUrl = url.toLowerCase();
-      // Skip SAFLII URLs due to SSL certificate issues
-      if (lowerUrl.includes('saflii.org')) {
-        return false;
-      }
+      if (lowerUrl.includes('saflii.org')) return false;
       return lowerUrl.endsWith('.pdf') || 
              lowerUrl.includes('/source.pdf') ||
              lowerUrl.includes('format=pdf') ||
              lowerUrl.includes('download/pdf') ||
              lowerUrl.includes('/pdf/') ||
-             lowerUrl.includes('getpdf') ||
-             lowerUrl.includes('viewpdf') ||
-             lowerUrl.includes('pdfdownloads') ||
-             lowerUrl.includes('fileadmin') ||
-             lowerUrl.includes('/akn/') && lowerUrl.includes('source') ||
-             (lowerUrl.includes('.pdf') && !lowerUrl.includes('.pdf.'));
-    };
-
-    // Helper to extract PDF links from a page
-    const extractPdfLinksFromPage = async (pageUrl: string): Promise<string[]> => {
-      try {
-        const scrapeResp = await fetch('https://api.firecrawl.dev/v1/scrape', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            url: pageUrl,
-            formats: ['links'],
-          }),
-        });
-        
-        if (!scrapeResp.ok) return [];
-        
-        const data = await scrapeResp.json();
-        const links = data.data?.links || data.links || [];
-        return links.filter((link: string) => isPdfUrl(link));
-      } catch {
-        return [];
-      }
+             lowerUrl.includes('/akn/') && lowerUrl.includes('source');
     };
 
     const allResults: CrawlResult[] = [];
     let pdfDownloadCount = 0;
 
     for (const site of sites) {
+      if (!shouldContinue()) {
+        console.log('Stopping early due to time limit');
+        break;
+      }
+
       console.log(`Mapping site: ${site.url}`);
       
       try {
-        // Use Firecrawl Map to discover all URLs on the site
-        const mapResponse = await fetch('https://api.firecrawl.dev/v1/map', {
+        // Use Firecrawl Map to discover URLs
+        const mapResponse = await fetchWithTimeout('https://api.firecrawl.dev/v1/map', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
@@ -142,10 +112,10 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             url: site.url,
-            limit: 5000, // Get as many URLs as possible
+            limit: 500, // Reduced limit for faster processing
             includeSubdomains: true,
           }),
-        });
+        }, 15000);
 
         if (!mapResponse.ok) {
           console.error(`Failed to map ${site.url}:`, await mapResponse.text());
@@ -157,18 +127,23 @@ serve(async (req) => {
         
         console.log(`Found ${urls.length} URLs on ${site.name}`);
 
-        // Process each URL
+        // Process URLs - limit PDF downloads to prevent timeout
+        let pdfDownloadsThisSite = 0;
+        const maxPdfsPerSite = 10;
+
         for (const url of urls) {
-          // Extract metadata from URL path
+          if (!shouldContinue()) break;
+
           const result = parseUrlMetadata(url, site.name);
           
-          // Download PDF if it's a PDF (using improved detection)
-          if (isPdfUrl(url) && downloadAllPdfs) {
+          // Download PDF if it's a PDF and we haven't hit limit
+          if (isPdfUrl(url) && downloadAllPdfs && pdfDownloadsThisSite < maxPdfsPerSite) {
             console.log(`Attempting to download PDF: ${url}`);
             const storagePath = await downloadAndStorePdf(supabase, url);
             if (storagePath) {
               result.storagePath = storagePath;
               pdfDownloadCount++;
+              pdfDownloadsThisSite++;
               console.log(`PDF stored (${pdfDownloadCount}): ${storagePath}`);
             }
           }
@@ -176,73 +151,35 @@ serve(async (req) => {
           allResults.push(result);
         }
 
-        // Secondary pass: Look for PDF links on legislation/document pages
-        const documentPages = urls.filter((u: string) => {
-          const lower = u.toLowerCase();
-          return lower.includes('/act/') || 
-                 lower.includes('/legislation/') || 
-                 lower.includes('/judgment/') ||
-                 lower.includes('/akn/') ||
-                 lower.includes('/document/');
-        }).slice(0, 20); // Limit to avoid timeout
-        
-        console.log(`Checking ${documentPages.length} document pages for PDF links`);
-        
-        for (const pageUrl of documentPages) {
-          const pdfLinks = await extractPdfLinksFromPage(pageUrl);
-          for (const pdfLink of pdfLinks) {
-            if (!allResults.some(r => r.url === pdfLink)) {
-              console.log(`Found PDF link on page: ${pdfLink}`);
-              const result = parseUrlMetadata(pdfLink, site.name);
-              const storagePath = await downloadAndStorePdf(supabase, pdfLink);
-              if (storagePath) {
-                result.storagePath = storagePath;
-                pdfDownloadCount++;
-                console.log(`PDF stored (${pdfDownloadCount}): ${storagePath}`);
-              }
-              allResults.push(result);
-            }
-          }
-        }
+        // Scrape main page for additional context
+        if (shouldContinue()) {
+          console.log(`Scraping main page: ${site.url}`);
+          const scrapeResponse = await fetchWithTimeout('https://api.firecrawl.dev/v1/scrape', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              url: site.url,
+              formats: ['links'],
+              onlyMainContent: true,
+            }),
+          }, 10000);
 
-        // Also scrape the main page to get additional links and context
-        console.log(`Scraping main page: ${site.url}`);
-        const scrapeResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            url: site.url,
-            formats: ['markdown', 'links'],
-            onlyMainContent: true,
-          }),
-        });
-
-        if (scrapeResponse.ok) {
-          const scrapeData = await scrapeResponse.json();
-          const additionalLinks = scrapeData.data?.links || scrapeData.links || [];
-          
-          console.log(`Found ${additionalLinks.length} additional links from scrape`);
-          
-          for (const link of additionalLinks) {
-            // Filter for relevant legal resource links
-            if (isRelevantLegalLink(link)) {
-              const result = parseUrlMetadata(link, site.name);
-              // Check if not already in results
-              if (!allResults.some(r => r.url === result.url)) {
-                // Download PDF if applicable
-                if (isPdfUrl(link) && downloadAllPdfs) {
-                  console.log(`Attempting to download PDF: ${link}`);
-                  const storagePath = await downloadAndStorePdf(supabase, link);
-                  if (storagePath) {
-                    result.storagePath = storagePath;
-                    pdfDownloadCount++;
-                    console.log(`PDF stored (${pdfDownloadCount}): ${storagePath}`);
-                  }
+          if (scrapeResponse.ok) {
+            const scrapeData = await scrapeResponse.json();
+            const additionalLinks = scrapeData.data?.links || scrapeData.links || [];
+            
+            console.log(`Found ${additionalLinks.length} additional links from scrape`);
+            
+            for (const link of additionalLinks) {
+              if (!shouldContinue()) break;
+              if (isRelevantLegalLink(link)) {
+                const result = parseUrlMetadata(link, site.name);
+                if (!allResults.some(r => r.url === result.url)) {
+                  allResults.push(result);
                 }
-                allResults.push(result);
               }
             }
           }
@@ -260,6 +197,8 @@ serve(async (req) => {
     const batchSize = 100;
     
     for (let i = 0; i < allResults.length; i += batchSize) {
+      if (!shouldContinue()) break;
+
       const batch = allResults.slice(i, i + batchSize).map(r => ({
         url: r.url,
         title: r.title || extractTitleFromUrl(r.url),
@@ -288,13 +227,15 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Successfully inserted/updated ${insertedCount} resources`);
+    const elapsed = Math.round((Date.now() - startTime) / 1000);
+    console.log(`Completed in ${elapsed}s. Inserted/updated ${insertedCount} resources`);
 
     return new Response(JSON.stringify({ 
       success: true,
-      message: `Crawled ${sites.length} sites, found ${allResults.length} resources, stored ${insertedCount}, PDFs downloaded: ${pdfDownloadCount}`,
+      message: `Crawled ${sites.length} sites in ${elapsed}s, found ${allResults.length} resources, stored ${insertedCount}, PDFs downloaded: ${pdfDownloadCount}`,
       totalResources: allResults.length,
       pdfsStored: pdfDownloadCount,
+      elapsedSeconds: elapsed,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -315,66 +256,50 @@ async function downloadAndStorePdf(
   pdfUrl: string
 ): Promise<string | null> {
   try {
-    // Skip SAFLII URLs due to SSL certificate issues that can't be bypassed in Deno
-    if (pdfUrl.includes('saflii.org')) {
-      console.log(`Skipping SAFLII URL due to SSL issues: ${pdfUrl}`);
+    if (pdfUrl.includes('saflii.org') || pdfUrl.includes('kenyalaw.org')) {
+      console.log(`Skipping URL due to known issues: ${pdfUrl}`);
       return null;
     }
 
-    console.log(`Attempting to download PDF: ${pdfUrl}`);
-
-    // Download the PDF
-    const response = await fetch(pdfUrl, {
+    const response = await fetchWithTimeout(pdfUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/pdf,application/octet-stream,*/*',
       },
-    });
+    }, 8000);
 
     if (!response.ok) {
       console.error(`Failed to download PDF: ${response.status} - ${pdfUrl}`);
       return null;
     }
 
-    // Check content type - be more lenient
     const contentType = response.headers.get('content-type') || '';
     const isLikelyPdf = contentType.includes('pdf') || 
                         contentType.includes('octet-stream') || 
-                        contentType.includes('application/download') ||
-                        contentType.includes('binary') ||
                         pdfUrl.toLowerCase().endsWith('.pdf');
     
     if (!isLikelyPdf) {
-      console.log(`Skipping non-PDF content: ${contentType} - ${pdfUrl}`);
+      console.log(`Skipping non-PDF content: ${contentType}`);
       return null;
     }
 
     const pdfBlob = await response.blob();
     const pdfBuffer = await pdfBlob.arrayBuffer();
     
-    // Skip very small files (likely error pages)
     if (pdfBuffer.byteLength < 1000) {
-      console.log(`Skipping small file (${pdfBuffer.byteLength} bytes): ${pdfUrl}`);
+      console.log(`Skipping small file (${pdfBuffer.byteLength} bytes)`);
       return null;
     }
     
-    // Generate a clean filename from URL
     const urlObj = new URL(pdfUrl);
     const pathParts = urlObj.pathname.split('/').filter(p => p);
     const fileName = pathParts[pathParts.length - 1] || 'document.pdf';
     const cleanFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').substring(0, 100);
     
-    // Determine folder based on source
-    const folder = pdfUrl.includes('openlawafrica') ? 'openlaw' : 
-                   pdfUrl.includes('africanlii') ? 'africanlii' : 
-                   pdfUrl.includes('kenyalaw') ? 'kenyalaw' :
-                   pdfUrl.includes('lawsofnigeria') ? 'nigeria' :
-                   pdfUrl.includes('nigerialii') ? 'nigerialii' : 
-                   pdfUrl.includes('tanzlii') ? 'tanzlii' :
-                   pdfUrl.includes('ulii.org') ? 'uganda' : 'other';
+    const folder = pdfUrl.includes('africanlii') ? 'africanlii' : 
+                   pdfUrl.includes('nigerialii') ? 'nigerialii' : 'other';
     const storagePath = `${folder}/${Date.now()}_${cleanFileName}`;
 
-    // Upload to Supabase storage
     const { data, error } = await supabase.storage
       .from('regulatory-pdfs')
       .upload(storagePath, new Uint8Array(pdfBuffer), {
@@ -387,23 +312,22 @@ async function downloadAndStorePdf(
       return null;
     }
 
-    console.log(`Successfully stored PDF: ${storagePath} (${Math.round(pdfBuffer.byteLength / 1024)}KB)`);
+    console.log(`Stored PDF: ${storagePath} (${Math.round(pdfBuffer.byteLength / 1024)}KB)`);
     return data.path;
   } catch (error) {
-    console.error(`Error downloading/storing PDF:`, error);
+    console.error(`Error downloading PDF:`, error);
     return null;
   }
 }
 
 function parseUrlMetadata(url: string, sourceName: string): CrawlResult {
-  const result: CrawlResult = {
+  return {
     url,
     title: extractTitleFromUrl(url),
     jurisdiction: extractJurisdiction(url),
     category: categorizeResource(url),
     resourceType: categorizeResourceType(url),
   };
-  return result;
 }
 
 function extractTitleFromUrl(url: string): string {
@@ -434,60 +358,27 @@ function extractJurisdiction(url: string): string {
     'nigeria': 'Nigeria',
     'kenya': 'Kenya',
     'south-africa': 'South Africa',
-    'southafrica': 'South Africa',
     'ghana': 'Ghana',
     'uganda': 'Uganda',
     'tanzania': 'Tanzania',
     'rwanda': 'Rwanda',
-    'ethiopia': 'Ethiopia',
     'zambia': 'Zambia',
     'zimbabwe': 'Zimbabwe',
     'botswana': 'Botswana',
     'namibia': 'Namibia',
     'malawi': 'Malawi',
-    'mozambique': 'Mozambique',
     'mauritius': 'Mauritius',
-    'seychelles': 'Seychelles',
     'lesotho': 'Lesotho',
-    'eswatini': 'Eswatini',
-    'swaziland': 'Eswatini',
-    'angola': 'Angola',
-    'cameroon': 'Cameroon',
-    'senegal': 'Senegal',
-    'ivory-coast': 'Ivory Coast',
-    'cote-divoire': 'Ivory Coast',
-    'mali': 'Mali',
-    'niger': 'Niger',
-    'burkina-faso': 'Burkina Faso',
-    'benin': 'Benin',
-    'togo': 'Togo',
-    'liberia': 'Liberia',
-    'sierra-leone': 'Sierra Leone',
-    'gambia': 'Gambia',
-    'guinea': 'Guinea',
-    'drc': 'DR Congo',
-    'congo': 'Congo',
-    'egypt': 'Egypt',
-    'morocco': 'Morocco',
-    'algeria': 'Algeria',
-    'tunisia': 'Tunisia',
-    'libya': 'Libya',
-    'sudan': 'Sudan',
-    'south-sudan': 'South Sudan',
-    'somalia': 'Somalia',
-    'eritrea': 'Eritrea',
-    'djibouti': 'Djibouti',
     'ecowas': 'ECOWAS',
     'eac': 'East African Community',
     'sadc': 'SADC',
-    'ohada': 'OHADA',
-    'comesa': 'COMESA',
     'african-union': 'African Union',
-    'au': 'African Union',
+    'AfCHPR': 'Pan-African',
+    'ECOWASCJ': 'ECOWAS',
   };
 
   for (const [key, value] of Object.entries(jurisdictions)) {
-    if (urlLower.includes(key)) {
+    if (urlLower.includes(key.toLowerCase())) {
       return value;
     }
   }
@@ -498,68 +389,49 @@ function extractJurisdiction(url: string): string {
 function categorizeResource(url: string): string {
   const urlLower = url.toLowerCase();
   
-  if (urlLower.includes('constitution')) return 'Constitution';
-  if (urlLower.includes('legislation') || urlLower.includes('act') || urlLower.includes('law')) return 'Legislation';
-  if (urlLower.includes('case') || urlLower.includes('judgment') || urlLower.includes('ruling')) return 'Case Law';
-  if (urlLower.includes('regulation') || urlLower.includes('directive')) return 'Regulations';
-  if (urlLower.includes('treaty') || urlLower.includes('convention') || urlLower.includes('protocol')) return 'Treaties';
-  if (urlLower.includes('gazette')) return 'Government Gazette';
-  if (urlLower.includes('bill')) return 'Bills';
-  if (urlLower.includes('policy')) return 'Policy Documents';
-  if (urlLower.includes('guideline')) return 'Guidelines';
+  if (urlLower.includes('/judgment') || urlLower.includes('/case')) return 'Case Law';
+  if (urlLower.includes('/act') || urlLower.includes('/legislation')) return 'Legislation';
+  if (urlLower.includes('/regulation')) return 'Regulation';
+  if (urlLower.includes('/constitution')) return 'Constitution';
+  if (urlLower.includes('/treaty') || urlLower.includes('/protocol')) return 'Treaty';
+  if (urlLower.includes('/gazette')) return 'Gazette';
+  if (urlLower.includes('/policy') || urlLower.includes('/guideline')) return 'Policy';
   
   return 'Legal Document';
 }
 
 function categorizeResourceType(url: string): string {
-  const urlLower = url.toLowerCase();
-  
-  if (urlLower.endsWith('.pdf')) return 'PDF';
-  if (urlLower.includes('/search')) return 'Search Page';
-  if (urlLower.includes('/index') || urlLower.includes('/list')) return 'Index';
-  if (urlLower.includes('/about') || urlLower.includes('/contact')) return 'Information';
-  
+  if (url.toLowerCase().endsWith('.pdf') || url.includes('/source.pdf')) return 'PDF';
+  if (url.toLowerCase().endsWith('.doc') || url.toLowerCase().endsWith('.docx')) return 'Word Document';
   return 'Web Page';
 }
 
 function isRelevantLegalLink(url: string): boolean {
   const urlLower = url.toLowerCase();
   
-  // Exclude non-legal pages
   const excludePatterns = [
+    'twitter.com', 'facebook.com', 'linkedin.com', 'youtube.com',
     'login', 'signup', 'register', 'cart', 'checkout',
-    'facebook.com', 'twitter.com', 'linkedin.com', 'youtube.com',
-    'mailto:', 'tel:', 'javascript:', '#',
-    '.jpg', '.jpeg', '.png', '.gif', '.svg', '.ico',
-    '.css', '.js', '.json', '.xml',
+    '.css', '.js', '.png', '.jpg', '.gif', '.svg', '.ico',
+    'mailto:', 'tel:', '#',
   ];
   
   for (const pattern of excludePatterns) {
-    if (urlLower.includes(pattern)) {
-      return false;
-    }
+    if (urlLower.includes(pattern)) return false;
   }
   
-  // Include if from target domains
-  return (
-    urlLower.includes('africanlii.org') ||
-    urlLower.includes('openlawafrica.org') ||
-    urlLower.includes('lawsofnigeria') ||
-    urlLower.includes('kenyalaw') ||
-    urlLower.includes('saflii') ||
-    urlLower.includes('ulii') ||
-    urlLower.includes('tanzlii') ||
-    urlLower.includes('zimlii') ||
-    urlLower.includes('lesotholii') ||
-    urlLower.includes('namiblii') ||
-    urlLower.includes('malawilii') ||
-    urlLower.includes('seylii') ||
-    urlLower.includes('eswatinilii') ||
-    urlLower.includes('swaziland') ||
-    urlLower.includes('ghalii') ||
-    urlLower.includes('sierralii') ||
-    urlLower.includes('liberlii') ||
-    urlLower.includes('gambia') ||
-    urlLower.includes('lawreports')
-  );
+  const includePatterns = [
+    '/act', '/judgment', '/case', '/legislation', '/law',
+    '/regulation', '/treaty', '/protocol', '/constitution',
+    '/gazette', '/policy', '/guideline', '/statute',
+    '.pdf', '/akn/',
+  ];
+  
+  for (const pattern of includePatterns) {
+    if (urlLower.includes(pattern)) return true;
+  }
+  
+  return urlLower.includes('africanlii') || 
+         urlLower.includes('nigerialii') || 
+         urlLower.includes('openlawafrica');
 }
