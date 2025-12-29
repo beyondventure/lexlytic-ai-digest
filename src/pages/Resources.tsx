@@ -113,9 +113,6 @@ const Resources = () => {
     return matchesSearch && matchesJurisdiction && matchesCategory && matchesSource && matchesDownloadable;
   }) || [];
 
-  // Count downloadable resources
-  const downloadableCount = resources?.filter(r => r.storage_path).length || 0;
-
   const getCategoryIcon = (category: string | null) => {
     switch (category) {
       case 'Constitution': return <Scroll className="h-4 w-4" />;
@@ -177,7 +174,7 @@ const Resources = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -207,17 +204,6 @@ const Resources = () => {
                 <div>
                   <div className="text-2xl font-bold text-foreground">{categories.length}</div>
                   <div className="text-sm text-muted-foreground">Categories</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <Download className="h-5 w-5 text-success" />
-                <div>
-                  <div className="text-2xl font-bold text-foreground">{downloadableCount}</div>
-                  <div className="text-sm text-muted-foreground">Downloadable</div>
                 </div>
               </div>
             </CardContent>
