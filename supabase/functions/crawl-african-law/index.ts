@@ -42,6 +42,7 @@ serve(async (req) => {
     }
 
     // Sites to crawl - expanded list for more coverage
+    // NOTE: SAFLII has SSL certificate issues so PDFs from there can't be downloaded
     const sites = [
       {
         url: "https://www.openlawafrica.org/african-law-index",
@@ -59,15 +60,34 @@ serve(async (req) => {
         mapUrl: "https://nigerialii.org"
       },
       {
-        url: "http://www.saflii.org/",
-        name: "SAFLII",
-        mapUrl: "http://www.saflii.org"
+        url: "http://kenyalaw.org/kl/",
+        name: "Kenya Law",
+        mapUrl: "http://kenyalaw.org"
+      },
+      {
+        url: "https://lawsofnigeria.placng.org/laws/",
+        name: "Laws of Nigeria",
+        mapUrl: "https://lawsofnigeria.placng.org"
+      },
+      {
+        url: "https://tanzlii.org/",
+        name: "Tanzania LII",
+        mapUrl: "https://tanzlii.org"
+      },
+      {
+        url: "https://ulii.org/",
+        name: "Uganda LII",
+        mapUrl: "https://ulii.org"
       }
     ];
     
     // Helper to check if URL is a PDF
     const isPdfUrl = (url: string) => {
       const lowerUrl = url.toLowerCase();
+      // Skip SAFLII URLs due to SSL certificate issues
+      if (lowerUrl.includes('saflii.org')) {
+        return false;
+      }
       return lowerUrl.endsWith('.pdf') || 
              lowerUrl.includes('/source.pdf') ||
              lowerUrl.includes('format=pdf') ||
@@ -236,33 +256,37 @@ async function downloadAndStorePdf(
   pdfUrl: string
 ): Promise<string | null> {
   try {
-    // Create HTTP client that bypasses SSL certificate validation for problematic sites
-    // This is needed for sites like SAFLII that have certificate issues
-    const client = Deno.createHttpClient({
-      caCerts: [],  // Empty array to skip cert validation
-    });
+    // Skip SAFLII URLs due to SSL certificate issues that can't be bypassed in Deno
+    if (pdfUrl.includes('saflii.org')) {
+      console.log(`Skipping SAFLII URL due to SSL issues: ${pdfUrl}`);
+      return null;
+    }
 
-    // Download the PDF with custom client
+    console.log(`Attempting to download PDF: ${pdfUrl}`);
+
+    // Download the PDF
     const response = await fetch(pdfUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'application/pdf,*/*',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/pdf,application/octet-stream,*/*',
       },
-      // @ts-ignore - Deno specific option
-      client: client,
     });
 
     if (!response.ok) {
       console.error(`Failed to download PDF: ${response.status} - ${pdfUrl}`);
-      client.close();
       return null;
     }
 
-    // Check content type to make sure it's actually a PDF
+    // Check content type - be more lenient
     const contentType = response.headers.get('content-type') || '';
-    if (!contentType.includes('pdf') && !contentType.includes('octet-stream')) {
+    const isLikelyPdf = contentType.includes('pdf') || 
+                        contentType.includes('octet-stream') || 
+                        contentType.includes('application/download') ||
+                        contentType.includes('binary') ||
+                        pdfUrl.toLowerCase().endsWith('.pdf');
+    
+    if (!isLikelyPdf) {
       console.log(`Skipping non-PDF content: ${contentType} - ${pdfUrl}`);
-      client.close();
       return null;
     }
 
@@ -272,7 +296,6 @@ async function downloadAndStorePdf(
     // Skip very small files (likely error pages)
     if (pdfBuffer.byteLength < 1000) {
       console.log(`Skipping small file (${pdfBuffer.byteLength} bytes): ${pdfUrl}`);
-      client.close();
       return null;
     }
     
@@ -280,13 +303,16 @@ async function downloadAndStorePdf(
     const urlObj = new URL(pdfUrl);
     const pathParts = urlObj.pathname.split('/').filter(p => p);
     const fileName = pathParts[pathParts.length - 1] || 'document.pdf';
-    const cleanFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const cleanFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').substring(0, 100);
     
     // Determine folder based on source
     const folder = pdfUrl.includes('openlawafrica') ? 'openlaw' : 
                    pdfUrl.includes('africanlii') ? 'africanlii' : 
-                   pdfUrl.includes('saflii') ? 'saflii' :
-                   pdfUrl.includes('nigerialii') ? 'nigerialii' : 'other';
+                   pdfUrl.includes('kenyalaw') ? 'kenyalaw' :
+                   pdfUrl.includes('lawsofnigeria') ? 'nigeria' :
+                   pdfUrl.includes('nigerialii') ? 'nigerialii' : 
+                   pdfUrl.includes('tanzlii') ? 'tanzlii' :
+                   pdfUrl.includes('ulii.org') ? 'uganda' : 'other';
     const storagePath = `${folder}/${Date.now()}_${cleanFileName}`;
 
     // Upload to Supabase storage
@@ -296,8 +322,6 @@ async function downloadAndStorePdf(
         contentType: 'application/pdf',
         upsert: true,
       });
-
-    client.close();
 
     if (error) {
       console.error(`Failed to upload PDF:`, error.message);
