@@ -13,6 +13,7 @@ interface CrawlResult {
   jurisdiction?: string;
   category?: string;
   resourceType?: string;
+  storagePath?: string;
 }
 
 serve(async (req) => {
@@ -31,6 +32,15 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Parse request body for limit option
+    let pdfLimit = 10; // Default to 10 PDFs for testing
+    try {
+      const body = await req.json();
+      if (body.pdfLimit) pdfLimit = body.pdfLimit;
+    } catch {
+      // No body provided, use default
+    }
+
     // Sites to crawl
     const sites = [
       {
@@ -44,6 +54,7 @@ serve(async (req) => {
     ];
 
     const allResults: CrawlResult[] = [];
+    let pdfDownloadCount = 0;
 
     for (const site of sites) {
       console.log(`Mapping site: ${site.url}`);
@@ -77,6 +88,18 @@ serve(async (req) => {
         for (const url of urls) {
           // Extract metadata from URL path
           const result = parseUrlMetadata(url, site.name);
+          
+          // Download PDF if it's a PDF and we haven't reached the limit
+          if (url.toLowerCase().endsWith('.pdf') && pdfDownloadCount < pdfLimit) {
+            console.log(`Attempting to download PDF: ${url}`);
+            const storagePath = await downloadAndStorePdf(supabase, url);
+            if (storagePath) {
+              result.storagePath = storagePath;
+              pdfDownloadCount++;
+              console.log(`PDF stored (${pdfDownloadCount}/${pdfLimit}): ${storagePath}`);
+            }
+          }
+          
           allResults.push(result);
         }
 
@@ -107,6 +130,16 @@ serve(async (req) => {
               const result = parseUrlMetadata(link, site.name);
               // Check if not already in results
               if (!allResults.some(r => r.url === result.url)) {
+                // Download PDF if applicable
+                if (link.toLowerCase().endsWith('.pdf') && pdfDownloadCount < pdfLimit) {
+                  console.log(`Attempting to download PDF: ${link}`);
+                  const storagePath = await downloadAndStorePdf(supabase, link);
+                  if (storagePath) {
+                    result.storagePath = storagePath;
+                    pdfDownloadCount++;
+                    console.log(`PDF stored (${pdfDownloadCount}/${pdfLimit}): ${storagePath}`);
+                  }
+                }
                 allResults.push(result);
               }
             }
@@ -118,7 +151,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Total resources found: ${allResults.length}`);
+    console.log(`Total resources found: ${allResults.length}, PDFs stored: ${pdfDownloadCount}`);
 
     // Insert resources into database
     let insertedCount = 0;
@@ -134,6 +167,7 @@ serve(async (req) => {
         resource_type: r.resourceType || categorizeResourceType(r.url),
         jurisdiction: r.jurisdiction || extractJurisdiction(r.url),
         category: r.category || categorizeResource(r.url),
+        storage_path: r.storagePath || null,
       }));
 
       const { error } = await supabase
@@ -154,8 +188,9 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ 
       success: true,
-      message: `Crawled ${sites.length} sites, found ${allResults.length} resources, stored ${insertedCount}`,
+      message: `Crawled ${sites.length} sites, found ${allResults.length} resources, stored ${insertedCount}, PDFs downloaded: ${pdfDownloadCount}`,
       totalResources: allResults.length,
+      pdfsStored: pdfDownloadCount,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -170,6 +205,57 @@ serve(async (req) => {
     });
   }
 });
+
+async function downloadAndStorePdf(
+  supabase: any,
+  pdfUrl: string
+): Promise<string | null> {
+  try {
+    // Download the PDF
+    const response = await fetch(pdfUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to download PDF: ${response.status} - ${pdfUrl}`);
+      return null;
+    }
+
+    const pdfBlob = await response.blob();
+    const pdfBuffer = await pdfBlob.arrayBuffer();
+    
+    // Generate a clean filename from URL
+    const urlObj = new URL(pdfUrl);
+    const pathParts = urlObj.pathname.split('/').filter(p => p);
+    const fileName = pathParts[pathParts.length - 1] || 'document.pdf';
+    const cleanFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+    
+    // Determine folder based on source
+    const folder = pdfUrl.includes('openlawafrica') ? 'openlaw' : 
+                   pdfUrl.includes('africanlii') ? 'africanlii' : 'other';
+    const storagePath = `${folder}/${Date.now()}_${cleanFileName}`;
+
+    // Upload to Supabase storage
+    const { data, error } = await supabase.storage
+      .from('regulatory-pdfs')
+      .upload(storagePath, new Uint8Array(pdfBuffer), {
+        contentType: 'application/pdf',
+        upsert: true,
+      });
+
+    if (error) {
+      console.error(`Failed to upload PDF:`, error.message);
+      return null;
+    }
+
+    return data.path;
+  } catch (error) {
+    console.error(`Error downloading/storing PDF:`, error);
+    return null;
+  }
+}
 
 function parseUrlMetadata(url: string, sourceName: string): CrawlResult {
   const result: CrawlResult = {

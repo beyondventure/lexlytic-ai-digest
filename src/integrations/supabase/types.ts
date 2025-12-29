@@ -23,6 +23,7 @@ export type Database = {
           jurisdiction: string | null
           resource_type: string | null
           source_site: string
+          storage_path: string | null
           title: string | null
           updated_at: string
           url: string
@@ -35,6 +36,7 @@ export type Database = {
           jurisdiction?: string | null
           resource_type?: string | null
           source_site: string
+          storage_path?: string | null
           title?: string | null
           updated_at?: string
           url: string
@@ -47,6 +49,7 @@ export type Database = {
           jurisdiction?: string | null
           resource_type?: string | null
           source_site?: string
+          storage_path?: string | null
           title?: string | null
           updated_at?: string
           url?: string

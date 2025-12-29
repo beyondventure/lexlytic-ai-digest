@@ -18,7 +18,8 @@ import {
   Filter,
   BookOpen,
   Gavel,
-  Scroll
+  Scroll,
+  Download
 } from "lucide-react";
 import {
   Select,
@@ -40,6 +41,7 @@ interface AfricanLawResource {
   jurisdiction: string | null;
   category: string | null;
   crawled_at: string;
+  storage_path: string | null;
 }
 
 const Resources = () => {
@@ -73,12 +75,14 @@ const Resources = () => {
   // Crawl mutation
   const crawlMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('crawl-african-law');
+      const { data, error } = await supabase.functions.invoke('crawl-african-law', {
+        body: { pdfLimit: 10 } // Test with 10 PDFs
+      });
       if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
-      toast.success(`Crawl complete! Found ${data.totalResources || 0} resources.`);
+      toast.success(`Crawl complete! Found ${data.totalResources || 0} resources, ${data.pdfsStored || 0} PDFs stored.`);
       queryClient.invalidateQueries({ queryKey: ["african_law_resources"] });
     },
     onError: (error) => {
@@ -297,61 +301,95 @@ const Resources = () => {
           </Card>
         ) : (
           <div className="space-y-3">
-            {filteredResources.map((resource) => (
-              <Card key={resource.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        {getCategoryIcon(resource.category)}
-                        <a 
-                          href={resource.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-foreground font-medium hover:text-accent transition-colors truncate"
-                        >
-                          {resource.title || 'Untitled Resource'}
-                        </a>
+            {filteredResources.map((resource) => {
+              // Get download URL from storage if available
+              const getDownloadUrl = () => {
+                if (resource.storage_path) {
+                  const { data } = supabase.storage
+                    .from('regulatory-pdfs')
+                    .getPublicUrl(resource.storage_path);
+                  return data.publicUrl;
+                }
+                return resource.url;
+              };
+
+              const handleDownload = (e: React.MouseEvent) => {
+                e.stopPropagation();
+                const url = getDownloadUrl();
+                if (url) {
+                  window.open(url, '_blank');
+                }
+              };
+
+              return (
+                <Card key={resource.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          {getCategoryIcon(resource.category)}
+                          <a 
+                            href={resource.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-foreground font-medium hover:text-accent transition-colors truncate"
+                          >
+                            {resource.title || 'Untitled Resource'}
+                          </a>
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate mb-2">
+                          {resource.url}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="outline" className={getSourceColor(resource.source_site)}>
+                            {resource.source_site}
+                          </Badge>
+                          {resource.jurisdiction && (
+                            <Badge variant="secondary">
+                              <Globe className="h-3 w-3 mr-1" />
+                              {resource.jurisdiction}
+                            </Badge>
+                          )}
+                          {resource.category && (
+                            <Badge variant="outline">
+                              {resource.category}
+                            </Badge>
+                          )}
+                          {resource.resource_type && resource.resource_type !== 'Web Page' && (
+                            <Badge variant="outline" className="bg-info/10 text-info border-info/20">
+                              {resource.resource_type}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground truncate mb-2">
-                        {resource.url}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <Badge variant="outline" className={getSourceColor(resource.source_site)}>
-                          {resource.source_site}
-                        </Badge>
-                        {resource.jurisdiction && (
-                          <Badge variant="secondary">
-                            <Globe className="h-3 w-3 mr-1" />
-                            {resource.jurisdiction}
-                          </Badge>
-                        )}
-                        {resource.category && (
-                          <Badge variant="outline">
-                            {resource.category}
-                          </Badge>
-                        )}
-                        {resource.resource_type && resource.resource_type !== 'Web Page' && (
-                          <Badge variant="outline" className="bg-info/10 text-info border-info/20">
-                            {resource.resource_type}
-                          </Badge>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {resource.storage_path ? (
+                          <Button 
+                            variant="default" 
+                            size="sm"
+                            className="bg-accent hover:bg-accent/90"
+                            onClick={handleDownload}
+                          >
+                            <Download className="h-4 w-4 mr-1" />
+                            Download
+                          </Button>
+                        ) : (
+                          <a 
+                            href={resource.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Button variant="ghost" size="icon">
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                          </a>
                         )}
                       </div>
                     </div>
-                    <a 
-                      href={resource.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="shrink-0"
-                    >
-                      <Button variant="ghost" size="icon">
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                    </a>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </main>
