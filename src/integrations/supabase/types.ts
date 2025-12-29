@@ -184,6 +184,7 @@ export type Database = {
           reference_number: string | null
           source_url: string | null
           status: string | null
+          storage_path: string | null
           summary: string | null
           title: string
           updated_at: string | null
@@ -200,6 +201,7 @@ export type Database = {
           reference_number?: string | null
           source_url?: string | null
           status?: string | null
+          storage_path?: string | null
           summary?: string | null
           title: string
           updated_at?: string | null
@@ -216,6 +218,7 @@ export type Database = {
           reference_number?: string | null
           source_url?: string | null
           status?: string | null
+          storage_path?: string | null
           summary?: string | null
           title?: string
           updated_at?: string | null

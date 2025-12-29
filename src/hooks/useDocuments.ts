@@ -14,6 +14,7 @@ export interface Document {
   full_text: string | null;
   pdf_url: string | null;
   source_url: string | null;
+  storage_path: string | null;
   created_at: string;
   updated_at: string;
 }

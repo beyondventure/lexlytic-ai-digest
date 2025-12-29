@@ -66,32 +66,61 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log('Starting CBN document import...');
-    console.log(`Processing ${CBN_CIRCULARS.length} circulars`);
+    // Parse request body for limit option
+    let limit = 10; // Default to 10 for testing
+    try {
+      const body = await req.json();
+      if (body.limit) limit = body.limit;
+    } catch {
+      // No body provided, use default
+    }
+
+    const circularsToProcess = CBN_CIRCULARS.slice(0, limit);
+    console.log(`Starting CBN document import with PDF storage...`);
+    console.log(`Processing ${circularsToProcess.length} of ${CBN_CIRCULARS.length} circulars`);
 
     let processedCount = 0;
     let skippedCount = 0;
     let errorCount = 0;
+    let pdfStoredCount = 0;
 
-    for (const circular of CBN_CIRCULARS) {
+    for (const circular of circularsToProcess) {
       try {
         // Check if document already exists by reference number or URL
         const { data: existing } = await supabase
           .from('documents')
-          .select('id')
+          .select('id, storage_path')
           .or(`reference_number.eq.${circular.refNo},pdf_url.eq.${circular.url}`)
           .maybeSingle();
 
         if (existing) {
-          console.log(`Skipping existing: ${circular.refNo}`);
+          // If exists but no storage_path, try to download and store the PDF
+          if (!existing.storage_path) {
+            console.log(`Updating existing document with PDF storage: ${circular.refNo}`);
+            const storagePath = await downloadAndStorePdf(supabase, circular.url, circular.refNo);
+            if (storagePath) {
+              await supabase
+                .from('documents')
+                .update({ storage_path: storagePath })
+                .eq('id', existing.id);
+              pdfStoredCount++;
+              console.log(`Stored PDF for existing: ${circular.refNo}`);
+            }
+          }
           skippedCount++;
           continue;
+        }
+
+        // Download and store PDF
+        const storagePath = await downloadAndStorePdf(supabase, circular.url, circular.refNo);
+        if (storagePath) {
+          pdfStoredCount++;
         }
 
         // Extract metadata
         const metadata = extractMetadata(circular.title, circular.refNo);
 
-        // Insert document
+        // Insert document with storage path
         const { error: insertError } = await supabase
           .from('documents')
           .insert({
@@ -105,6 +134,7 @@ serve(async (req) => {
             full_text: `Document available at: ${circular.url}`,
             pdf_url: circular.url,
             source_url: circular.url,
+            storage_path: storagePath,
           });
 
         if (insertError) {
@@ -112,7 +142,7 @@ serve(async (req) => {
           errorCount++;
         } else {
           processedCount++;
-          console.log(`Added: ${circular.refNo}`);
+          console.log(`Added: ${circular.refNo}${storagePath ? ' (PDF stored)' : ''}`);
         }
       } catch (error) {
         console.error(`Error processing ${circular.refNo}:`, error);
@@ -120,15 +150,17 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Import complete. Added: ${processedCount}, Skipped: ${skippedCount}, Errors: ${errorCount}`);
+    console.log(`Import complete. Added: ${processedCount}, Skipped: ${skippedCount}, PDFs stored: ${pdfStoredCount}, Errors: ${errorCount}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         processed: processedCount,
         skipped: skippedCount,
+        pdfsStored: pdfStoredCount,
         errors: errorCount,
-        total: CBN_CIRCULARS.length,
+        total: circularsToProcess.length,
+        totalAvailable: CBN_CIRCULARS.length,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -145,6 +177,54 @@ serve(async (req) => {
     );
   }
 });
+
+async function downloadAndStorePdf(
+  supabase: any,
+  pdfUrl: string,
+  refNo: string
+): Promise<string | null> {
+  try {
+    console.log(`Downloading PDF: ${refNo}`);
+    
+    // Download the PDF
+    const response = await fetch(pdfUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to download PDF for ${refNo}: ${response.status}`);
+      return null;
+    }
+
+    const pdfBlob = await response.blob();
+    const pdfBuffer = await pdfBlob.arrayBuffer();
+    
+    // Generate a clean filename
+    const cleanRefNo = refNo.replace(/[/\\:*?"<>|]/g, '_');
+    const fileName = `cbn/${cleanRefNo}.pdf`;
+
+    // Upload to Supabase storage
+    const { data, error } = await supabase.storage
+      .from('regulatory-pdfs')
+      .upload(fileName, new Uint8Array(pdfBuffer), {
+        contentType: 'application/pdf',
+        upsert: true,
+      });
+
+    if (error) {
+      console.error(`Failed to upload PDF for ${refNo}:`, error.message);
+      return null;
+    }
+
+    console.log(`Successfully stored PDF: ${fileName}`);
+    return data.path;
+  } catch (error) {
+    console.error(`Error downloading/storing PDF for ${refNo}:`, error);
+    return null;
+  }
+}
 
 function extractMetadata(title: string, refNo: string): {
   documentType: string;
