@@ -228,6 +228,54 @@ export type Database = {
         }
         Relationships: []
       }
+      due_diligence_reports: {
+        Row: {
+          citations: Json | null
+          created_at: string
+          documents: Json
+          id: string
+          obligations: Json | null
+          overall_risk_score: number | null
+          recommendations: Json | null
+          red_flags: Json | null
+          status: string
+          summary: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          citations?: Json | null
+          created_at?: string
+          documents?: Json
+          id?: string
+          obligations?: Json | null
+          overall_risk_score?: number | null
+          recommendations?: Json | null
+          red_flags?: Json | null
+          status?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          citations?: Json | null
+          created_at?: string
+          documents?: Json
+          id?: string
+          obligations?: Json | null
+          overall_risk_score?: number | null
+          recommendations?: Json | null
+          red_flags?: Json | null
+          status?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       legal_documents: {
         Row: {
           created_at: string
