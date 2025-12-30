@@ -139,7 +139,7 @@ const DueDiligence = () => {
     if (!user) return;
 
     try {
-      const { error } = await supabase.from('due_diligence_reports').insert({
+      const reportData = {
         user_id: user.id,
         title: `Due Diligence Report - ${new Date().toLocaleDateString()}`,
         overall_risk_score: analysis.riskScore,
@@ -151,12 +151,14 @@ const DueDiligence = () => {
           redFlags: f.redFlags,
           documentType: f.documentType,
           jurisdiction: f.jurisdiction,
-        })),
-        red_flags: analysis.redFlags,
-        obligations: analysis.obligations,
-        recommendations: analysis.recommendations,
-        citations: analysis.citations,
-      });
+        })) as unknown as any,
+        red_flags: analysis.redFlags as unknown as any,
+        obligations: analysis.obligations as unknown as any,
+        recommendations: analysis.recommendations as unknown as any,
+        citations: analysis.citations as unknown as any,
+      };
+
+      const { error } = await supabase.from('due_diligence_reports').insert(reportData);
 
       if (error) throw error;
       
