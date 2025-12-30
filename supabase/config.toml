@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.crawl-african-law]
 verify_jwt = false
+
+[functions.due-diligence]
+verify_jwt = false
