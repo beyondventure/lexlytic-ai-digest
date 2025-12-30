@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { ExportButton } from '@/components/ExportButton';
 import { extractTextFromFile, formatFileSize } from '@/lib/documentParser';
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Upload,
@@ -23,7 +24,16 @@ import {
   BookOpen,
   Gavel,
   ListChecks,
+  ExternalLink,
+  History,
+  Trash2,
 } from 'lucide-react';
+
+interface Citation {
+  title: string;
+  url: string;
+  relevance: string;
+}
 
 interface UploadedDoc {
   id: string;
@@ -40,6 +50,7 @@ interface UploadedDoc {
   jurisdiction?: string;
   documentType?: string;
   keyTerms?: string[];
+  citations?: Citation[];
   error?: string;
 }
 
@@ -49,6 +60,20 @@ interface OverallAnalysis {
   redFlags: string[];
   obligations: string[];
   recommendations: string[];
+  citations: Citation[];
+}
+
+interface SavedReport {
+  id: string;
+  title: string;
+  overall_risk_score: number | null;
+  summary: string | null;
+  documents: any;
+  red_flags: any;
+  obligations: any;
+  recommendations: any;
+  citations: any;
+  created_at: string;
 }
 
 const DueDiligence = () => {
@@ -59,6 +84,7 @@ const DueDiligence = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [overallAnalysis, setOverallAnalysis] = useState<OverallAnalysis | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -66,6 +92,22 @@ const DueDiligence = () => {
       if (!session?.user) navigate('/auth');
     });
   }, [navigate]);
+
+  // Fetch saved reports
+  const { data: savedReports, refetch: refetchReports } = useQuery({
+    queryKey: ['due_diligence_reports', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('due_diligence_reports')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data as SavedReport[];
+    },
+    enabled: !!user?.id,
+  });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
@@ -93,6 +135,89 @@ const DueDiligence = () => {
     setOverallAnalysis(null);
   };
 
+  const saveReport = async (analysis: OverallAnalysis, analyzedFiles: UploadedDoc[]) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase.from('due_diligence_reports').insert({
+        user_id: user.id,
+        title: `Due Diligence Report - ${new Date().toLocaleDateString()}`,
+        overall_risk_score: analysis.riskScore,
+        summary: analysis.summary,
+        documents: analyzedFiles.map(f => ({
+          name: f.name,
+          riskScore: f.riskScore,
+          summary: f.summary,
+          redFlags: f.redFlags,
+          documentType: f.documentType,
+          jurisdiction: f.jurisdiction,
+        })),
+        red_flags: analysis.redFlags,
+        obligations: analysis.obligations,
+        recommendations: analysis.recommendations,
+        citations: analysis.citations,
+      });
+
+      if (error) throw error;
+      
+      refetchReports();
+      toast({
+        title: 'Report Saved',
+        description: 'Your due diligence report has been saved.',
+      });
+    } catch (error) {
+      console.error('Failed to save report:', error);
+    }
+  };
+
+  const deleteReport = async (reportId: string) => {
+    try {
+      const { error } = await supabase
+        .from('due_diligence_reports')
+        .delete()
+        .eq('id', reportId);
+      
+      if (error) throw error;
+      refetchReports();
+      toast({ title: 'Report deleted' });
+    } catch (error) {
+      toast({ title: 'Failed to delete report', variant: 'destructive' });
+    }
+  };
+
+  const loadReport = (report: SavedReport) => {
+    setOverallAnalysis({
+      riskScore: report.overall_risk_score || 0,
+      summary: report.summary || '',
+      redFlags: report.red_flags || [],
+      obligations: report.obligations || [],
+      recommendations: report.recommendations || [],
+      citations: report.citations || [],
+    });
+    
+    // Load documents from saved report
+    const docs = (report.documents || []).map((d: any, i: number) => ({
+      id: `saved-${i}`,
+      name: d.name,
+      file: null as any,
+      size: 'Saved',
+      status: 'complete' as const,
+      riskScore: d.riskScore,
+      summary: d.summary,
+      redFlags: d.redFlags || [],
+      documentType: d.documentType,
+      jurisdiction: d.jurisdiction,
+    }));
+    
+    setFiles(docs);
+    setShowHistory(false);
+    
+    toast({
+      title: 'Report Loaded',
+      description: `Loaded report from ${new Date(report.created_at).toLocaleDateString()}`,
+    });
+  };
+
   const runAnalysis = async () => {
     if (files.length === 0) {
       toast({
@@ -113,6 +238,9 @@ const DueDiligence = () => {
       
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        
+        // Skip already analyzed files (from loaded reports)
+        if (!file.file) continue;
         
         setFiles((prev) =>
           prev.map((f) =>
@@ -165,7 +293,7 @@ const DueDiligence = () => {
       // Step 2: Mark documents as analyzing
       setFiles((prev) =>
         prev.map((f) =>
-          f.status !== 'error' ? { ...f, status: 'analyzing' } : f
+          f.status !== 'error' && f.file ? { ...f, status: 'analyzing' } : f
         )
       );
       setAnalysisProgress(40);
@@ -194,39 +322,45 @@ const DueDiligence = () => {
       // Step 4: Update file results
       const analysisResults = data.documents;
       
-      setFiles((prev) =>
-        prev.map((f) => {
-          if (f.status === 'error') return f;
-          
-          const result = analysisResults.find((r: any) => r.name === f.name);
-          if (result) {
-            return {
-              ...f,
-              status: 'complete',
-              riskScore: result.riskScore,
-              redFlags: result.redFlags || [],
-              summary: result.summary,
-              obligations: result.obligations || [],
-              recommendations: result.recommendations || [],
-              jurisdiction: result.jurisdiction,
-              documentType: result.documentType,
-              keyTerms: result.keyTerms || [],
-            };
-          }
-          return { ...f, status: 'complete' };
-        })
-      );
+      const updatedFiles = files.map((f) => {
+        if (f.status === 'error' || !f.file) return f;
+        
+        const result = analysisResults.find((r: any) => r.name === f.name);
+        if (result) {
+          return {
+            ...f,
+            status: 'complete' as const,
+            riskScore: result.riskScore,
+            redFlags: result.redFlags || [],
+            summary: result.summary,
+            obligations: result.obligations || [],
+            recommendations: result.recommendations || [],
+            jurisdiction: result.jurisdiction,
+            documentType: result.documentType,
+            keyTerms: result.keyTerms || [],
+            citations: result.citations || [],
+          };
+        }
+        return { ...f, status: 'complete' as const };
+      });
+      
+      setFiles(updatedFiles);
 
       // Step 5: Set overall analysis
-      setOverallAnalysis({
+      const overallData: OverallAnalysis = {
         riskScore: data.overall.riskScore,
         summary: data.overall.summary,
         redFlags: data.overall.redFlags,
         obligations: data.overall.obligations,
         recommendations: data.overall.recommendations,
-      });
-
+        citations: data.overall.citations || [],
+      };
+      
+      setOverallAnalysis(overallData);
       setAnalysisProgress(100);
+
+      // Step 6: Save the report
+      await saveReport(overallData, updatedFiles);
 
       toast({
         title: 'Analysis Complete',
@@ -286,31 +420,42 @@ const DueDiligence = () => {
               <span className="text-xl font-bold text-foreground">Lexlytic</span>
             </Link>
           </div>
-          {overallAnalysis && (
-            <ExportButton
-              data={{
-                title: 'Due Diligence Report',
-                date: new Date().toLocaleDateString(),
-                riskScore: overallAnalysis.riskScore,
-                summary: overallAnalysis.summary,
-                redFlags: overallAnalysis.redFlags,
-                obligations: overallAnalysis.obligations,
-                mitigationSuggestions: overallAnalysis.recommendations,
-                content: files
-                  .filter(f => f.status === 'complete')
-                  .map((f) => ({
-                    section: f.name,
-                    items: [
-                      `Risk Score: ${f.riskScore}/100`,
-                      `Type: ${f.documentType || 'Unknown'}`,
-                      `Jurisdiction: ${f.jurisdiction || 'Not specified'}`,
-                      ...(f.summary ? [`Summary: ${f.summary}`] : []),
-                      ...(f.redFlags.length > 0 ? [`Red Flags: ${f.redFlags.join(', ')}`] : []),
-                    ],
-                  })),
-              }}
-            />
-          )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+            >
+              <History className="h-4 w-4 mr-2" />
+              History
+            </Button>
+            {overallAnalysis && (
+              <ExportButton
+                data={{
+                  title: 'Due Diligence Report',
+                  date: new Date().toLocaleDateString(),
+                  riskScore: overallAnalysis.riskScore,
+                  summary: overallAnalysis.summary,
+                  redFlags: overallAnalysis.redFlags,
+                  obligations: overallAnalysis.obligations,
+                  mitigationSuggestions: overallAnalysis.recommendations,
+                  citations: overallAnalysis.citations.map(c => typeof c === 'string' ? c : `${c.title} - ${c.url}`),
+                  content: files
+                    .filter(f => f.status === 'complete')
+                    .map((f) => ({
+                      section: f.name,
+                      items: [
+                        `Risk Score: ${f.riskScore}/100`,
+                        `Type: ${f.documentType || 'Unknown'}`,
+                        `Jurisdiction: ${f.jurisdiction || 'Not specified'}`,
+                        ...(f.summary ? [`Summary: ${f.summary}`] : []),
+                        ...(f.redFlags.length > 0 ? [`Red Flags: ${f.redFlags.join(', ')}`] : []),
+                      ],
+                    })),
+                }}
+              />
+            )}
+          </div>
         </div>
       </nav>
 
@@ -320,9 +465,55 @@ const DueDiligence = () => {
           <div>
             <h1 className="text-3xl font-bold text-foreground mb-2">Due Diligence Analysis</h1>
             <p className="text-muted-foreground">
-              Upload legal documents for AI-powered risk assessment, compliance review, and red flag detection
+              Upload legal documents for AI-powered risk assessment with real regulatory citations
             </p>
           </div>
+
+          {/* History Panel */}
+          {showHistory && savedReports && savedReports.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  Recent Reports
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {savedReports.map((report) => (
+                    <div
+                      key={report.id}
+                      className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`text-lg font-bold ${getScoreColor(report.overall_risk_score || 0)}`}>
+                          {report.overall_risk_score || 0}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{report.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(report.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => loadReport(report)}>
+                          Load
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteReport(report.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Upload Section */}
           <Card className="border-2 border-dashed border-accent/30 hover:border-accent/50 transition-colors">
@@ -357,7 +548,7 @@ const DueDiligence = () => {
               <CardContent className="py-6">
                 <div className="flex items-center gap-4 mb-4">
                   <Loader2 className="h-5 w-5 animate-spin text-accent" />
-                  <span className="font-medium">Analyzing documents...</span>
+                  <span className="font-medium">Analyzing documents with AI...</span>
                   <span className="text-muted-foreground">{Math.round(analysisProgress)}%</span>
                 </div>
                 <Progress value={analysisProgress} className="h-2" />
@@ -373,19 +564,21 @@ const DueDiligence = () => {
                   <CardTitle>Documents ({files.length})</CardTitle>
                   <CardDescription>Documents for due diligence analysis</CardDescription>
                 </div>
-                <Button onClick={runAnalysis} disabled={isAnalyzing}>
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <Scale className="h-4 w-4 mr-2" />
-                      Run Due Diligence Analysis
-                    </>
-                  )}
-                </Button>
+                {files.some(f => f.file) && (
+                  <Button onClick={runAnalysis} disabled={isAnalyzing}>
+                    {isAnalyzing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Scale className="h-4 w-4 mr-2" />
+                        Run Due Diligence Analysis
+                      </>
+                    )}
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -451,7 +644,7 @@ const DueDiligence = () => {
                             <p className="text-xs text-muted-foreground">Risk Score</p>
                           </div>
                         )}
-                        {!isAnalyzing && (
+                        {!isAnalyzing && file.file && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -505,9 +698,9 @@ const DueDiligence = () => {
                 <Card>
                   <CardContent className="pt-6 text-center">
                     <div className="text-4xl font-bold text-green-500">
-                      {overallAnalysis.recommendations.length}
+                      {overallAnalysis.citations.length}
                     </div>
-                    <p className="text-sm text-muted-foreground">Recommendations</p>
+                    <p className="text-sm text-muted-foreground">Regulatory Citations</p>
                   </CardContent>
                 </Card>
               </div>
@@ -603,6 +796,53 @@ const DueDiligence = () => {
                         </li>
                       ))}
                     </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Citations */}
+              {overallAnalysis.citations.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BookOpen className="h-5 w-5 text-accent" />
+                      Regulatory Citations ({overallAnalysis.citations.length})
+                    </CardTitle>
+                    <CardDescription>
+                      References to relevant regulations from the Lexlytic database
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {overallAnalysis.citations.map((citation, i) => (
+                        <div
+                          key={i}
+                          className="p-4 border border-border rounded-lg hover:bg-muted/50"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <p className="font-medium text-foreground">{citation.title}</p>
+                              {citation.relevance && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {citation.relevance}
+                                </p>
+                              )}
+                            </div>
+                            {citation.url && (
+                              <a
+                                href={citation.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-accent hover:underline text-sm"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                                View
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
                 </Card>
               )}
