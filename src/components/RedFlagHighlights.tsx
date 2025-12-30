@@ -25,7 +25,6 @@ interface RedFlagHighlightsProps {
 }
 
 export function RedFlagHighlights({ riskScore = 0, documentType, jurisdiction }: RedFlagHighlightsProps) {
-  // Generate red flags based on document context
   const generateRedFlags = (): RedFlag[] => {
     const flags: RedFlag[] = [];
 
@@ -122,7 +121,7 @@ export function RedFlagHighlights({ riskScore = 0, documentType, jurisdiction }:
           <div>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              Red Flags & High-Risk Clauses
+              Red Flags and High-Risk Clauses
             </CardTitle>
             <CardDescription>
               AI-identified compliance gaps and regulatory concerns
@@ -190,8 +189,8 @@ export function RedFlagHighlights({ riskScore = 0, documentType, jurisdiction }:
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Badge variant="outline" className="cursor-help">
-                                📚 {flag.regulation}
-                              </TooltipTrigger>
+                                {flag.regulation}
+                              </Badge>
                             </TooltipTrigger>
                             <TooltipContent>
                               <p>View referenced regulation</p>
