@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ExportButton } from "@/components/ExportButton";
 
 const COMPLIANCE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/check-compliance`;
 
@@ -279,7 +280,23 @@ const Reports = () => {
               {/* Analysis Results */}
               {analysisResult && (
                 <div className="border-t border-border pt-6">
-                  <h3 className="text-lg font-semibold mb-4 text-foreground">Detailed Analysis</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-foreground">Detailed Analysis</h3>
+                    <ExportButton
+                      data={{
+                        title: analysisResult.documentName || 'Compliance Report',
+                        date: new Date(analysisResult.analyzedAt).toLocaleDateString(),
+                        complianceScore: analysisResult.complianceScore,
+                        summary: analysisResult.analysis.substring(0, 500),
+                        content: [
+                          {
+                            section: 'Full Analysis',
+                            items: analysisResult.analysis.split('\n').filter(line => line.trim()),
+                          },
+                        ],
+                      }}
+                    />
+                  </div>
                   <ScrollArea className="h-[400px] w-full rounded-lg border border-border bg-secondary/30 p-4">
                     <div className="prose prose-sm max-w-none dark:prose-invert">
                       <pre className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed">

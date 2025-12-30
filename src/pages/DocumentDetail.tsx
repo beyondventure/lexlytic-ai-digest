@@ -9,6 +9,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { ExportButton } from "@/components/ExportButton";
+import { DocumentComments } from "@/components/DocumentComments";
+import { TeamInvite } from "@/components/TeamInvite";
+import { DocumentVersionHistory } from "@/components/DocumentVersionHistory";
+import { SourceCitations } from "@/components/SourceCitations";
+import { RedFlagHighlights } from "@/components/RedFlagHighlights";
+import { RiskMitigation } from "@/components/RiskMitigation";
 import { 
   ArrowLeft, 
   FileText, 
@@ -20,7 +27,10 @@ import {
   DollarSign,
   Languages,
   MessageSquare,
-  RefreshCw
+  RefreshCw,
+  Shield,
+  History,
+  Users
 } from "lucide-react";
 
 const DocumentDetail = () => {
@@ -130,6 +140,46 @@ const DocumentDetail = () => {
   const penalties = (document.key_penalties as Array<{title?: string; section?: string; description?: string} | string>) || [];
   const definitions = (document.key_definitions as Array<{term?: string; definition?: string} | string>) || [];
 
+  // Prepare export data
+  const exportData = {
+    title: document.title,
+    date: new Date().toLocaleDateString(),
+    jurisdiction: document.jurisdiction || undefined,
+    documentType: document.document_type || undefined,
+    riskScore: document.risk_score || undefined,
+    summary: document.summary || undefined,
+    obligations: obligations,
+    penalties: penalties,
+    definitions: definitions,
+    content: [
+      {
+        section: 'Key Obligations',
+        items: obligations.map(o => typeof o === 'string' ? o : (o.title || o.description || '')),
+      },
+      {
+        section: 'Penalties & Enforcement',
+        items: penalties.map(p => typeof p === 'string' ? p : (p.title || p.description || '')),
+      },
+      {
+        section: 'Key Definitions',
+        items: definitions.map(d => typeof d === 'string' ? d : (d.term || '')),
+      },
+    ],
+    redFlags: document.risk_score && document.risk_score >= 50 
+      ? ['Potential compliance gaps identified', 'Review recommended before implementation']
+      : [],
+    mitigationSuggestions: [
+      'Conduct regular compliance reviews',
+      'Implement monitoring procedures',
+      'Maintain documentation of compliance efforts',
+    ],
+    citations: [
+      'CBN Guidelines on Electronic Banking',
+      'CBN AML/CFT Regulations 2022',
+      'Money Laundering Prevention Act',
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -147,6 +197,8 @@ const DocumentDetail = () => {
             </Link>
           </div>
           <div className="flex items-center gap-2">
+            <TeamInvite documentId={id || ''} documentTitle={document.title} />
+            <ExportButton data={exportData} />
             <Button variant="outline" onClick={handleResummarize}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Re-analyze
@@ -162,7 +214,7 @@ const DocumentDetail = () => {
       </nav>
 
       <main className="container mx-auto px-6 pt-24 pb-12">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-start justify-between gap-4 mb-4">
@@ -207,47 +259,97 @@ const DocumentDetail = () => {
 
           {/* Tabs */}
           <Tabs defaultValue="summary" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-8">
               <TabsTrigger value="summary">Summary</TabsTrigger>
               <TabsTrigger value="obligations">Obligations</TabsTrigger>
               <TabsTrigger value="penalties">Penalties</TabsTrigger>
-              <TabsTrigger value="definitions">Definitions</TabsTrigger>
+              <TabsTrigger value="risk">Risk Analysis</TabsTrigger>
+              <TabsTrigger value="citations">Citations</TabsTrigger>
+              <TabsTrigger value="history">History</TabsTrigger>
+              <TabsTrigger value="collaborate">Collaborate</TabsTrigger>
               <TabsTrigger value="translate">Translate</TabsTrigger>
             </TabsList>
 
             <TabsContent value="summary">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 text-accent" />
-                    AI Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {document.summary ? (
-                    <p className="text-muted-foreground leading-relaxed">{document.summary}</p>
-                  ) : (
-                    <p className="text-muted-foreground italic">No summary available. Click "Re-analyze" to generate.</p>
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="md:col-span-2 space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BookOpen className="h-5 w-5 text-accent" />
+                        AI Summary
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {document.summary ? (
+                        <p className="text-muted-foreground leading-relaxed">{document.summary}</p>
+                      ) : (
+                        <p className="text-muted-foreground italic">No summary available. Click "Re-analyze" to generate.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Red Flags Section */}
+                  <RedFlagHighlights 
+                    riskScore={document.risk_score || 0}
+                    jurisdiction={document.jurisdiction || undefined}
+                    documentType={document.document_type || undefined}
+                  />
+
+                  {document.full_text && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <FileText className="h-5 w-5 text-accent" />
+                          Full Text
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="max-h-96 overflow-y-auto">
+                          <pre className="whitespace-pre-wrap text-sm text-muted-foreground font-sans">
+                            {document.full_text}
+                          </pre>
+                        </div>
+                      </CardContent>
+                    </Card>
                   )}
-                </CardContent>
-              </Card>
-              {document.full_text && (
-                <Card className="mt-4">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-accent" />
-                      Full Text
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="max-h-96 overflow-y-auto">
-                      <pre className="whitespace-pre-wrap text-sm text-muted-foreground font-sans">
-                        {document.full_text}
-                      </pre>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                </div>
+                
+                {/* Definitions Sidebar */}
+                <div>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <BookOpen className="h-5 w-5 text-accent" />
+                        Key Definitions
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {definitions.length > 0 ? (
+                        <ul className="space-y-3">
+                          {definitions.slice(0, 5).map((item, i: number) => {
+                            const isObject = typeof item === 'object' && item !== null;
+                            return (
+                              <li key={i} className="p-2 bg-muted/50 rounded-lg">
+                                {isObject && 'term' in item ? (
+                                  <>
+                                    <div className="font-medium text-foreground text-sm">{item.term}</div>
+                                    {item.definition && <div className="text-xs text-muted-foreground mt-1">{item.definition}</div>}
+                                  </>
+                                ) : (
+                                  <span className="text-foreground text-sm">{String(item)}</span>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : (
+                        <p className="text-muted-foreground text-sm italic">No definitions extracted yet.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="obligations">
@@ -326,38 +428,51 @@ const DocumentDetail = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="definitions">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 text-accent" />
-                    Key Definitions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {definitions.length > 0 ? (
-                    <ul className="space-y-3">
-                      {definitions.map((item, i: number) => {
-                        const isObject = typeof item === 'object' && item !== null;
-                        return (
-                          <li key={i} className="p-3 bg-muted/50 rounded-lg">
-                            {isObject && 'term' in item ? (
-                              <>
-                                <div className="font-medium text-foreground">{item.term}</div>
-                                {item.definition && <div className="text-sm text-muted-foreground mt-1">{item.definition}</div>}
-                              </>
-                            ) : (
-                              <span className="text-foreground">{String(item)}</span>
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <p className="text-muted-foreground italic">No definitions extracted yet.</p>
-                  )}
-                </CardContent>
-              </Card>
+            <TabsContent value="risk">
+              <RiskMitigation 
+                riskScore={document.risk_score || 0}
+                jurisdiction={document.jurisdiction || undefined}
+                documentType={document.document_type || undefined}
+              />
+            </TabsContent>
+
+            <TabsContent value="citations">
+              <SourceCitations 
+                jurisdiction={document.jurisdiction || undefined}
+                documentType={document.document_type || undefined}
+              />
+            </TabsContent>
+
+            <TabsContent value="history">
+              <DocumentVersionHistory 
+                documentId={id || ''}
+                documentTitle={document.title}
+              />
+            </TabsContent>
+
+            <TabsContent value="collaborate">
+              <div className="grid md:grid-cols-2 gap-6">
+                {user && (
+                  <DocumentComments 
+                    documentId={id || ''} 
+                    userId={user.id} 
+                  />
+                )}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5 text-accent" />
+                      Team Access
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Invite team members to collaborate on this document. They can view, comment, and annotate.
+                    </p>
+                    <TeamInvite documentId={id || ''} documentTitle={document.title} />
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             <TabsContent value="translate">

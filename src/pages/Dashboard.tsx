@@ -138,6 +138,8 @@ const Dashboard = () => {
     { icon: Globe, label: "Compare Jurisdictions", href: "/comparison", color: "text-info" },
     { icon: Bell, label: "Manage Alerts", href: "/alerts-settings", color: "text-warning" },
     { icon: MessageSquare, label: "Ask Lexlytic", href: "/chat", color: "text-success" },
+    { icon: FileText, label: "Due Diligence", href: "/due-diligence", color: "text-primary" },
+    { icon: TrendingUp, label: "Reports", href: "/reports", color: "text-accent" },
   ];
 
   const stats = [
@@ -173,6 +175,7 @@ const Dashboard = () => {
             <Link to="/resources" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Resources</Link>
             <Link to="/comparison" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Comparison</Link>
             <Link to="/risk" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Risk</Link>
+            <Link to="/due-diligence" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Due Diligence</Link>
             <Link to="/cbn-copilot" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">CBN Co-pilot</Link>
           </div>
 
@@ -218,7 +221,7 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
           {quickActions.map((action) => (
             <Link key={action.label} to={action.href}>
               <Card className="hover:shadow-md transition-all hover:border-accent/30 cursor-pointer h-full">
