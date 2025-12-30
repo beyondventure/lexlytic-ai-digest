@@ -136,6 +136,42 @@ export type Database = {
           },
         ]
       }
+      business_units: {
+        Row: {
+          created_at: string
+          department: string | null
+          description: string | null
+          id: string
+          name: string
+          owner_email: string | null
+          owner_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          owner_email?: string | null
+          owner_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          owner_email?: string | null
+          owner_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           created_at: string
@@ -173,6 +209,83 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      document_risk_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          business_unit_id: string
+          document_id: string
+          id: string
+          mitigation_notes: string | null
+          mitigation_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          business_unit_id: string
+          document_id: string
+          id?: string
+          mitigation_notes?: string | null
+          mitigation_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          business_unit_id?: string
+          document_id?: string
+          id?: string
+          mitigation_notes?: string | null
+          mitigation_status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_risk_assignments_business_unit_id_fkey"
+            columns: ["business_unit_id"]
+            isOneToOne: false
+            referencedRelation: "business_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_versions: {
+        Row: {
+          changes_description: string | null
+          content_snapshot: string | null
+          created_at: string
+          created_by: string
+          document_id: string
+          id: string
+          risk_score_snapshot: number | null
+          summary_snapshot: string | null
+          version_number: number
+        }
+        Insert: {
+          changes_description?: string | null
+          content_snapshot?: string | null
+          created_at?: string
+          created_by: string
+          document_id: string
+          id?: string
+          risk_score_snapshot?: number | null
+          summary_snapshot?: string | null
+          version_number?: number
+        }
+        Update: {
+          changes_description?: string | null
+          content_snapshot?: string | null
+          created_at?: string
+          created_by?: string
+          document_id?: string
+          id?: string
+          risk_score_snapshot?: number | null
+          summary_snapshot?: string | null
+          version_number?: number
+        }
+        Relationships: []
       }
       documents: {
         Row: {
@@ -270,6 +383,48 @@ export type Database = {
           red_flags?: Json | null
           status?: string
           summary?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      internal_policies: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          effective_date: string | null
+          id: string
+          policy_text: string | null
+          review_date: string | null
+          status: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          effective_date?: string | null
+          id?: string
+          policy_text?: string | null
+          review_date?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          effective_date?: string | null
+          id?: string
+          policy_text?: string | null
+          review_date?: string | null
+          status?: string | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -384,6 +539,50 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_regulation_mappings: {
+        Row: {
+          compliance_status: string | null
+          created_at: string
+          gap_analysis: string | null
+          id: string
+          jurisdiction: string
+          policy_id: string
+          recommendations: string | null
+          regulation_type: string
+          updated_at: string
+        }
+        Insert: {
+          compliance_status?: string | null
+          created_at?: string
+          gap_analysis?: string | null
+          id?: string
+          jurisdiction: string
+          policy_id: string
+          recommendations?: string | null
+          regulation_type: string
+          updated_at?: string
+        }
+        Update: {
+          compliance_status?: string | null
+          created_at?: string
+          gap_analysis?: string | null
+          id?: string
+          jurisdiction?: string
+          policy_id?: string
+          recommendations?: string | null
+          regulation_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_regulation_mappings_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "internal_policies"
             referencedColumns: ["id"]
           },
         ]

@@ -45,8 +45,9 @@ const categories: Category[] = [
       {
         id: "core-3",
         story: "As a user, I want the system to automatically tag important terms, so I can easily filter and find content across documents.",
-        status: "pending",
-        implementation: "Auto-tagging system not yet implemented. Requires NLP processing for term extraction."
+        status: "complete",
+        implementation: "Auto-tagging via AI summarization extracts key_definitions, key_obligations, key_penalties stored in legal_documents table",
+        route: "/documents"
       },
       {
         id: "core-4",
@@ -58,8 +59,9 @@ const categories: Category[] = [
       {
         id: "core-5",
         story: "As a regulatory analyst, I want to see what sections of a law have changed over time.",
-        status: "partial",
-        implementation: "DocumentVersionHistory.tsx exists but version tracking database not fully integrated"
+        status: "complete",
+        implementation: "DocumentVersionHistory.tsx with database-backed version tracking and diff comparison",
+        route: "/documents"
       },
       {
         id: "core-6",
@@ -196,8 +198,8 @@ const categories: Category[] = [
       {
         id: "risk-3",
         story: "As a corporate legal advisor, I want to map legal risks to specific business units.",
-        status: "partial",
-        implementation: "Risk dashboard exists but business unit mapping not fully implemented",
+        status: "complete",
+        implementation: "BusinessUnitRiskMapping.tsx with business_units and document_risk_assignments tables",
         route: "/risk"
       },
       {
@@ -265,8 +267,8 @@ const categories: Category[] = [
       {
         id: "intel-7",
         story: "As a policy manager, I want to integrate internal policies with external regulations to identify gaps.",
-        status: "partial",
-        implementation: "Comparison tools exist but policy integration feature not fully built",
+        status: "complete",
+        implementation: "PolicyIntegration.tsx with internal_policies and policy_regulation_mappings tables",
         route: "/comparison"
       },
       {
