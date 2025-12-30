@@ -14,6 +14,8 @@ import {
   useRecentReports,
   useDocumentStats,
   useRegulatoryAlerts,
+  usePlatformAnalytics,
+  useSupportMessages,
 } from '@/hooks/useAdminData';
 import { AdminStatsCards } from '@/components/admin/AdminStatsCards';
 import { DocumentAnalyticsChart } from '@/components/admin/DocumentAnalyticsChart';
@@ -21,6 +23,8 @@ import { RecentReportsTable } from '@/components/admin/RecentReportsTable';
 import { RegulatoryAlertsPanel } from '@/components/admin/RegulatoryAlertsPanel';
 import { UserManagementTable } from '@/components/admin/UserManagementTable';
 import { PlatformSettingsCard } from '@/components/admin/PlatformSettingsCard';
+import { ComprehensiveAnalytics } from '@/components/admin/ComprehensiveAnalytics';
+import { SupportMessagesPanel } from '@/components/admin/SupportMessagesPanel';
 import {
   Table,
   TableBody,
@@ -42,6 +46,7 @@ import {
   TrendingUp,
   Activity,
   DollarSign,
+  MessageSquare,
 } from 'lucide-react';
 
 const Admin = () => {
@@ -63,6 +68,8 @@ const Admin = () => {
   const { data: reports, isLoading: reportsLoading } = useRecentReports(isAdmin || false);
   const { data: docStats, isLoading: docStatsLoading } = useDocumentStats(isAdmin || false);
   const { data: regulatoryAlerts, isLoading: alertsLoading } = useRegulatoryAlerts(isAdmin || false);
+  const { data: platformAnalytics, isLoading: analyticsLoading } = usePlatformAnalytics(isAdmin || false);
+  const { data: supportMessages, isLoading: supportLoading } = useSupportMessages(isAdmin || false);
 
   // Mock payment data for demonstration
   const paymentStats = {
@@ -149,18 +156,27 @@ const Admin = () => {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+            <TabsList className="grid grid-cols-6 w-full max-w-3xl">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Overview</span>
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                <span className="hidden sm:inline">Analytics</span>
               </TabsTrigger>
               <TabsTrigger value="users" className="flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 <span className="hidden sm:inline">Users</span>
               </TabsTrigger>
-              <TabsTrigger value="reports" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Reports</span>
+              <TabsTrigger value="support" className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                <span className="hidden sm:inline">Support</span>
+                {stats?.unreadSupportTickets ? (
+                  <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 text-xs flex items-center justify-center">
+                    {stats.unreadSupportTickets}
+                  </Badge>
+                ) : null}
               </TabsTrigger>
               <TabsTrigger value="payments" className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4" />
@@ -180,6 +196,24 @@ const Admin = () => {
                 <RecentReportsTable reports={reports} isLoading={reportsLoading} />
                 <RegulatoryAlertsPanel alerts={regulatoryAlerts} isLoading={alertsLoading} />
               </div>
+            </TabsContent>
+
+            {/* Analytics Tab */}
+            <TabsContent value="analytics" className="space-y-6">
+              <ComprehensiveAnalytics 
+                analytics={platformAnalytics} 
+                stats={stats} 
+                isLoading={analyticsLoading || statsLoading} 
+              />
+            </TabsContent>
+
+            {/* Support Tab */}
+            <TabsContent value="support" className="space-y-6">
+              <SupportMessagesPanel 
+                messages={supportMessages} 
+                isLoading={supportLoading} 
+                currentUserId={user?.id || ''} 
+              />
             </TabsContent>
 
             {/* Users Tab */}

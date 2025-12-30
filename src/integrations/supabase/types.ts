@@ -463,6 +463,59 @@ export type Database = {
         }
         Relationships: []
       }
+      support_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_from_admin: boolean
+          is_read: boolean
+          parent_id: string | null
+          priority: string
+          recipient_id: string | null
+          sender_id: string
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_from_admin?: boolean
+          is_read?: boolean
+          parent_id?: string | null
+          priority?: string
+          recipient_id?: string | null
+          sender_id: string
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_from_admin?: boolean
+          is_read?: boolean
+          parent_id?: string | null
+          priority?: string
+          recipient_id?: string | null
+          sender_id?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "support_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
