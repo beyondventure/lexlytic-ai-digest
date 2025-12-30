@@ -23,6 +23,7 @@ import DocumentDetail from "./pages/DocumentDetail";
 import Resources from "./pages/Resources";
 import DueDiligence from "./pages/DueDiligence";
 import Admin from "./pages/Admin";
+import SiteLinks from "./pages/SiteLinks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ const App = () => (
           <Route path="/resources" element={<Resources />} />
           <Route path="/due-diligence" element={<DueDiligence />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/site-links" element={<SiteLinks />} />
           
           {/* CBN Co-pilot routes */}
           <Route path="/cbn-copilot" element={<CBNPortal />} />
