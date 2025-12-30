@@ -3,10 +3,24 @@ import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
+import {
+  useIsAdmin,
+  useAdminStats,
+  useAllUsers,
+  useRecentReports,
+  useDocumentStats,
+  useRegulatoryAlerts,
+} from '@/hooks/useAdminData';
+import { AdminStatsCards } from '@/components/admin/AdminStatsCards';
+import { DocumentAnalyticsChart } from '@/components/admin/DocumentAnalyticsChart';
+import { RecentReportsTable } from '@/components/admin/RecentReportsTable';
+import { RegulatoryAlertsPanel } from '@/components/admin/RegulatoryAlertsPanel';
+import { UserManagementTable } from '@/components/admin/UserManagementTable';
+import { PlatformSettingsCard } from '@/components/admin/PlatformSettingsCard';
 import {
   Table,
   TableBody,
@@ -16,53 +30,25 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import {
   ArrowLeft,
+  LayoutDashboard,
   Users,
-  Shield,
-  Settings,
-  UserPlus,
-  Search,
-  MoreHorizontal,
   FileText,
+  AlertTriangle,
+  Settings,
+  BarChart3,
+  CreditCard,
+  Shield,
+  TrendingUp,
   Activity,
-  Lock,
+  DollarSign,
 } from 'lucide-react';
-import { format } from 'date-fns';
-
-interface TeamMember {
-  id: string;
-  email: string;
-  name: string;
-  role: 'admin' | 'editor' | 'viewer';
-  status: 'active' | 'pending' | 'suspended';
-  lastActive: string;
-  documentsAccessed: number;
-}
 
 const Admin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'admin' | 'editor' | 'viewer'>('viewer');
-  const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -71,128 +57,56 @@ const Admin = () => {
     });
   }, [navigate]);
 
-  // Demo team members data
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    {
-      id: '1',
-      email: 'admin@lexlytic.com',
-      name: 'Admin User',
-      role: 'admin',
-      status: 'active',
-      lastActive: new Date().toISOString(),
-      documentsAccessed: 45,
-    },
-    {
-      id: '2',
-      email: 'legal@company.com',
-      name: 'Legal Team Lead',
-      role: 'editor',
-      status: 'active',
-      lastActive: new Date(Date.now() - 3600000).toISOString(),
-      documentsAccessed: 32,
-    },
-    {
-      id: '3',
-      email: 'compliance@company.com',
-      name: 'Compliance Officer',
-      role: 'viewer',
-      status: 'active',
-      lastActive: new Date(Date.now() - 86400000).toISOString(),
-      documentsAccessed: 18,
-    },
-    {
-      id: '4',
-      email: 'new.user@company.com',
-      name: 'New User',
-      role: 'viewer',
-      status: 'pending',
-      lastActive: '',
-      documentsAccessed: 0,
-    },
-  ]);
+  const { data: isAdmin, isLoading: adminLoading } = useIsAdmin(user?.id);
+  const { data: stats, isLoading: statsLoading } = useAdminStats(isAdmin || false);
+  const { data: users, isLoading: usersLoading, refetch: refetchUsers } = useAllUsers(isAdmin || false);
+  const { data: reports, isLoading: reportsLoading } = useRecentReports(isAdmin || false);
+  const { data: docStats, isLoading: docStatsLoading } = useDocumentStats(isAdmin || false);
+  const { data: regulatoryAlerts, isLoading: alertsLoading } = useRegulatoryAlerts(isAdmin || false);
 
-  const filteredMembers = teamMembers.filter(
-    (m) =>
-      m.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleInvite = () => {
-    if (!inviteEmail.includes('@')) {
-      toast({
-        title: 'Invalid email',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    const newMember: TeamMember = {
-      id: crypto.randomUUID(),
-      email: inviteEmail,
-      name: inviteEmail.split('@')[0],
-      role: inviteRole,
-      status: 'pending',
-      lastActive: '',
-      documentsAccessed: 0,
-    };
-
-    setTeamMembers([...teamMembers, newMember]);
-    setInviteEmail('');
-    setIsInviteOpen(false);
-    toast({
-      title: 'Invitation sent',
-      description: `Invitation sent to ${inviteEmail}`,
-    });
+  // Mock payment data for demonstration
+  const paymentStats = {
+    totalRevenue: 45250,
+    monthlyRevenue: 8750,
+    activeSubscriptions: 23,
+    conversionRate: 12.5,
   };
 
-  const handleRoleChange = (memberId: string, newRole: 'admin' | 'editor' | 'viewer') => {
-    setTeamMembers(
-      teamMembers.map((m) =>
-        m.id === memberId ? { ...m, role: newRole } : m
-      )
-    );
-    toast({
-      title: 'Role updated',
-    });
-  };
+  const recentPayments = [
+    { id: '1', user: 'Legal Corp Ltd', plan: 'Enterprise', amount: 499, date: new Date().toISOString(), status: 'completed' },
+    { id: '2', user: 'FinTech Solutions', plan: 'Professional', amount: 199, date: new Date(Date.now() - 86400000).toISOString(), status: 'completed' },
+    { id: '3', user: 'Compliance Inc', plan: 'Professional', amount: 199, date: new Date(Date.now() - 172800000).toISOString(), status: 'completed' },
+    { id: '4', user: 'Law Partners LLP', plan: 'Enterprise', amount: 499, date: new Date(Date.now() - 259200000).toISOString(), status: 'pending' },
+    { id: '5', user: 'Risk Advisory Co', plan: 'Starter', amount: 49, date: new Date(Date.now() - 345600000).toISOString(), status: 'completed' },
+  ];
 
-  const handleStatusChange = (memberId: string, newStatus: 'active' | 'suspended') => {
-    setTeamMembers(
-      teamMembers.map((m) =>
-        m.id === memberId ? { ...m, status: newStatus } : m
-      )
-    );
-    toast({
-      title: `User ${newStatus === 'active' ? 'activated' : 'suspended'}`,
-    });
-  };
-
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return <Badge className="bg-destructive">Admin</Badge>;
-      case 'editor':
-        return <Badge className="bg-accent">Editor</Badge>;
-      default:
-        return <Badge variant="secondary">Viewer</Badge>;
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-success">Active</Badge>;
-      case 'pending':
-        return <Badge variant="outline">Pending</Badge>;
-      default:
-        return <Badge variant="destructive">Suspended</Badge>;
-    }
-  };
-
-  if (!user) {
+  if (!user || adminLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md w-full mx-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <Shield className="h-5 w-5" />
+              Access Denied
+            </CardTitle>
+            <CardDescription>
+              You don't have administrator privileges to access this page.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate('/dashboard')} className="w-full">
+              Return to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -212,267 +126,353 @@ const Admin = () => {
               </div>
               <span className="text-xl font-bold text-foreground">Lexlytic</span>
             </Link>
+            <Badge variant="destructive" className="ml-2">Admin</Badge>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Logged in as: {user.email}
           </div>
         </div>
       </nav>
 
       <main className="container mx-auto px-6 pt-24 pb-12">
-        <div className="max-w-6xl mx-auto space-y-8">
+        <div className="max-w-7xl mx-auto space-y-8">
           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Admin Panel</h1>
-              <p className="text-muted-foreground">
-                Manage users, roles, and platform access
-              </p>
-            </div>
-            <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Invite User
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Invite Team Member</DialogTitle>
-                  <DialogDescription>
-                    Send an invitation to join your Lexlytic workspace
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <Input
-                    type="email"
-                    placeholder="email@company.com"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                  />
-                  <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as any)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="viewer">Viewer - Read-only access</SelectItem>
-                      <SelectItem value="editor">Editor - Can edit documents</SelectItem>
-                      <SelectItem value="admin">Admin - Full access</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button onClick={handleInvite} className="w-full">
-                    Send Invitation
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Admin Dashboard</h1>
+            <p className="text-muted-foreground">
+              Complete platform management and analytics overview
+            </p>
           </div>
 
-          {/* Stats */}
-          <div className="grid md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-accent/10 rounded-lg">
-                    <Users className="h-5 w-5 text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{teamMembers.length}</p>
-                    <p className="text-sm text-muted-foreground">Total Users</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-success/10 rounded-lg">
-                    <Activity className="h-5 w-5 text-success" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {teamMembers.filter((m) => m.status === 'active').length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Active Users</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-warning/10 rounded-lg">
-                    <Shield className="h-5 w-5 text-warning" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {teamMembers.filter((m) => m.role === 'admin').length}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Admins</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-info/10 rounded-lg">
-                    <FileText className="h-5 w-5 text-info" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">
-                      {teamMembers.reduce((acc, m) => acc + m.documentsAccessed, 0)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Documents Accessed</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Stats Cards */}
+          <AdminStatsCards stats={stats} isLoading={statsLoading} />
 
-          {/* User Management */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Team Members</CardTitle>
-                  <CardDescription>Manage user access and permissions</CardDescription>
-                </div>
-                <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search users..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <LayoutDashboard className="h-4 w-4" />
+                <span className="hidden sm:inline">Overview</span>
+              </TabsTrigger>
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Users</span>
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Reports</span>
+              </TabsTrigger>
+              <TabsTrigger value="payments" className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                <span className="hidden sm:inline">Payments</span>
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Settings</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-6">
+              <DocumentAnalyticsChart data={docStats} isLoading={docStatsLoading} />
+              
+              <div className="grid lg:grid-cols-2 gap-6">
+                <RecentReportsTable reports={reports} isLoading={reportsLoading} />
+                <RegulatoryAlertsPanel alerts={regulatoryAlerts} isLoading={alertsLoading} />
               </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Last Active</TableHead>
-                    <TableHead>Documents</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredMembers.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback>
-                              {member.name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{member.name}</p>
-                            <p className="text-xs text-muted-foreground">{member.email}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={member.role}
-                          onValueChange={(v) => handleRoleChange(member.id, v as any)}
-                        >
-                          <SelectTrigger className="w-28 h-8">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="viewer">Viewer</SelectItem>
-                            <SelectItem value="editor">Editor</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(member.status)}</TableCell>
-                      <TableCell>
-                        {member.lastActive
-                          ? format(new Date(member.lastActive), 'MMM d, h:mm a')
-                          : '-'}
-                      </TableCell>
-                      <TableCell>{member.documentsAccessed}</TableCell>
-                      <TableCell>
-                        {member.status === 'active' ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleStatusChange(member.id, 'suspended')}
-                          >
-                            <Lock className="h-4 w-4 mr-1" />
-                            Suspend
-                          </Button>
-                        ) : member.status === 'suspended' ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleStatusChange(member.id, 'active')}
-                          >
-                            Activate
-                          </Button>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">Pending...</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+            </TabsContent>
 
-          {/* Role Permissions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-accent" />
-                Role Permissions
-              </CardTitle>
-              <CardDescription>
-                Overview of access levels for each role
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Permission</TableHead>
-                    <TableHead className="text-center">Viewer</TableHead>
-                    <TableHead className="text-center">Editor</TableHead>
-                    <TableHead className="text-center">Admin</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {[
-                    { name: 'View documents', viewer: true, editor: true, admin: true },
-                    { name: 'Upload documents', viewer: false, editor: true, admin: true },
-                    { name: 'Edit documents', viewer: false, editor: true, admin: true },
-                    { name: 'Delete documents', viewer: false, editor: false, admin: true },
-                    { name: 'Export reports', viewer: true, editor: true, admin: true },
-                    { name: 'Manage team', viewer: false, editor: false, admin: true },
-                    { name: 'Billing access', viewer: false, editor: false, admin: true },
-                  ].map((perm) => (
-                    <TableRow key={perm.name}>
-                      <TableCell>{perm.name}</TableCell>
-                      <TableCell className="text-center">
-                        {perm.viewer ? '✓' : '—'}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {perm.editor ? '✓' : '—'}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {perm.admin ? '✓' : '—'}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+            {/* Users Tab */}
+            <TabsContent value="users" className="space-y-6">
+              <UserManagementTable
+                users={users}
+                isLoading={usersLoading}
+                onRefresh={refetchUsers}
+              />
+
+              {/* Role Permissions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-accent" />
+                    Role Permissions Matrix
+                  </CardTitle>
+                  <CardDescription>Access levels for each role</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Permission</TableHead>
+                        <TableHead className="text-center">Viewer</TableHead>
+                        <TableHead className="text-center">Editor</TableHead>
+                        <TableHead className="text-center">Admin</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {[
+                        { name: 'View documents', viewer: true, editor: true, admin: true },
+                        { name: 'Upload documents', viewer: false, editor: true, admin: true },
+                        { name: 'Edit documents', viewer: false, editor: true, admin: true },
+                        { name: 'Delete documents', viewer: false, editor: false, admin: true },
+                        { name: 'Run due diligence', viewer: true, editor: true, admin: true },
+                        { name: 'Export reports', viewer: true, editor: true, admin: true },
+                        { name: 'Manage team', viewer: false, editor: false, admin: true },
+                        { name: 'View analytics', viewer: false, editor: false, admin: true },
+                        { name: 'Billing access', viewer: false, editor: false, admin: true },
+                        { name: 'Platform settings', viewer: false, editor: false, admin: true },
+                      ].map((perm) => (
+                        <TableRow key={perm.name}>
+                          <TableCell className="font-medium">{perm.name}</TableCell>
+                          <TableCell className="text-center">
+                            {perm.viewer ? (
+                              <span className="text-success">✓</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {perm.editor ? (
+                              <span className="text-success">✓</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {perm.admin ? (
+                              <span className="text-success">✓</span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Reports Tab */}
+            <TabsContent value="reports" className="space-y-6">
+              <div className="grid lg:grid-cols-2 gap-6">
+                <RecentReportsTable reports={reports} isLoading={reportsLoading} />
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5" />
+                      Report Analytics
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                        <span className="text-sm">Average Risk Score</span>
+                        <Badge className="bg-warning">52.3</Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                        <span className="text-sm">High Risk Reports</span>
+                        <Badge variant="destructive">{reports?.filter(r => (r.overall_risk_score || 0) >= 70).length || 0}</Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                        <span className="text-sm">Medium Risk Reports</span>
+                        <Badge className="bg-warning">{reports?.filter(r => (r.overall_risk_score || 0) >= 50 && (r.overall_risk_score || 0) < 70).length || 0}</Badge>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                        <span className="text-sm">Low Risk Reports</span>
+                        <Badge className="bg-success">{reports?.filter(r => (r.overall_risk_score || 0) < 50).length || 0}</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <RegulatoryAlertsPanel alerts={regulatoryAlerts} isLoading={alertsLoading} />
+            </TabsContent>
+
+            {/* Payments Tab */}
+            <TabsContent value="payments" className="space-y-6">
+              {/* Payment Stats */}
+              <div className="grid md:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-success/10 rounded-lg">
+                        <DollarSign className="h-5 w-5 text-success" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">${paymentStats.totalRevenue.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">Total Revenue</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <TrendingUp className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">${paymentStats.monthlyRevenue.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">This Month</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-accent/10 rounded-lg">
+                        <Users className="h-5 w-5 text-accent" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">{paymentStats.activeSubscriptions}</p>
+                        <p className="text-xs text-muted-foreground">Active Subscriptions</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-info/10 rounded-lg">
+                        <Activity className="h-5 w-5 text-info" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold">{paymentStats.conversionRate}%</p>
+                        <p className="text-xs text-muted-foreground">Conversion Rate</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Recent Payments Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    Recent Payments
+                  </CardTitle>
+                  <CardDescription>Latest subscription payments and transactions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Plan</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {recentPayments.map((payment) => (
+                        <TableRow key={payment.id}>
+                          <TableCell className="font-medium">{payment.user}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{payment.plan}</Badge>
+                          </TableCell>
+                          <TableCell>${payment.amount}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {new Date(payment.date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            {payment.status === 'completed' ? (
+                              <Badge className="bg-success">Completed</Badge>
+                            ) : (
+                              <Badge className="bg-warning">Pending</Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              {/* Subscription Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Subscription Breakdown</CardTitle>
+                  <CardDescription>Distribution of subscription plans</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="p-4 rounded-lg border border-border">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium">Starter</span>
+                        <Badge variant="secondary">$49/mo</Badge>
+                      </div>
+                      <p className="text-2xl font-bold">8</p>
+                      <p className="text-xs text-muted-foreground">subscribers</p>
+                    </div>
+                    <div className="p-4 rounded-lg border border-border bg-primary/5">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium">Professional</span>
+                        <Badge className="bg-primary">$199/mo</Badge>
+                      </div>
+                      <p className="text-2xl font-bold">11</p>
+                      <p className="text-xs text-muted-foreground">subscribers</p>
+                    </div>
+                    <div className="p-4 rounded-lg border border-border bg-accent/5">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium">Enterprise</span>
+                        <Badge className="bg-accent">$499/mo</Badge>
+                      </div>
+                      <p className="text-2xl font-bold">4</p>
+                      <p className="text-xs text-muted-foreground">subscribers</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Settings Tab */}
+            <TabsContent value="settings" className="space-y-6">
+              <div className="grid lg:grid-cols-2 gap-6">
+                <PlatformSettingsCard />
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5" />
+                      System Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm">Platform Version</span>
+                      <Badge variant="outline">v2.1.0</Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm">Database Status</span>
+                      <Badge className="bg-success">Connected</Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm">AI Service</span>
+                      <Badge className="bg-success">Active</Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm">Storage Used</span>
+                      <Badge variant="secondary">2.4 GB / 10 GB</Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm">API Calls (Today)</span>
+                      <Badge variant="secondary">1,234</Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm">Last Backup</span>
+                      <Badge variant="outline">{new Date().toLocaleDateString()}</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>
