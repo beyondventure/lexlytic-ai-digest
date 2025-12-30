@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SupportChat } from "@/components/SupportChat";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -377,6 +378,9 @@ const Dashboard = () => {
           </p>
         </div>
       </footer>
+
+      {/* Support Chat */}
+      {user && <SupportChat userId={user.id} />}
     </div>
   );
 };
